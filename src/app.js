@@ -9,7 +9,6 @@ const { probarConexionMySQL } = require('./config/mysql');
 const { probarConexionMongo } = require('./config/mongo');
 const { ocultarCredenciales, pistaParaError, apuntaALocalhost } = require('./utils/mongoDiagnostico');
 const { manejadorErrores } = require('./middlewares/errorMiddleware');
-const { verificarToken } = require('./middlewares/authMiddleware');
 
 const catalogosRoutes = require('./routes/catalogosRoutes');
 const inventarioRoutes = require('./routes/inventarioRoutes');
@@ -45,15 +44,7 @@ app.use('/api/mermas', limitadorEscritura);
 app.use('/api/inventario/lotes', limitadorEscritura);
 app.use('/api/auth/login', limitadorLogin);
 
-// Rutas públicas: salud y login. Todo lo demás requiere un JWT válido.
-app.use('/api', (req, res, next) => {
-  const ruta = req.originalUrl.split('?')[0];
-  if (ruta === '/api/salud' || ruta === '/api/auth/login') {
-    return next();
-  }
-  return verificarToken(req, res, next);
-});
-
+// La aplicación es de acceso abierto: no se exige token para consultar la API.
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/salud', async (req, res) => {
@@ -76,7 +67,11 @@ app.get('/api/salud', async (req, res) => {
       mongodb: {
         ...mongoStatus,
         ...(detalleMongo ? { mensaje: detalleMongo } : {}),
-        ...(diagnosticoMongo ? { pista: diagnosticoMongo } : {})
+        ...(diagnosticoMongo ? { pista: diagnosticoMongo } : {}),
+        // Solo nombres (nunca valores) de variables relacionadas, para detectar errores de tipeo.
+        ...(mongoStatus.estado === 'ok'
+          ? {}
+          : { variablesMongoDetectadas: Object.keys(process.env).filter((k) => /^MONGO/i.test(k)).sort() })
       }
     },
     timestamp: new Date().toISOString()

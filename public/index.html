@@ -13,8 +13,8 @@
 <body>
   <div id="sidebar-overlay" class="sidebar-overlay" onclick="alternarSidebar()"></div>
 
-  <!-- Contenedor privado de la aplicación (completamente oculto si no hay login) -->
-  <div id="app-privada" style="display: none; width: 100%; min-height: 100vh;">
+  <!-- Aplicación (acceso directo, sin login) -->
+  <div id="app-privada" style="display: flex; width: 100%; min-height: 100vh;">
     <aside class="sidebar" id="sidebar-menu">
       <div class="logo-area">
         <span style="font-size: 1.8rem; line-height: 1;">🥩</span>
@@ -60,12 +60,9 @@
       </nav>
       <div style="padding: 16px 20px; border-top: 1px solid #2D3748; display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <div id="usuario-nombre" style="font-size: 0.85rem; font-weight: 700; color: #FFF;">Uzielito Remix</div>
-          <div style="font-size: 0.72rem; color: #A0AEC0;">Administrador</div>
+          <div id="usuario-nombre" style="font-size: 0.85rem; font-weight: 700; color: #FFF;">Administrador</div>
+          <div style="font-size: 0.72rem; color: #A0AEC0;">Sistema abierto</div>
         </div>
-        <button onclick="cerrarSesion()" title="Cerrar sesión" class="btn" style="background: rgba(229, 62, 62, 0.15); color: #E53E3E; padding: 6px 12px; min-height: auto; border-radius: 6px; font-size: 0.8rem;">
-          Salir
-        </button>
       </div>
     </aside>
 
@@ -85,34 +82,6 @@
 
       <div class="contenedor" id="contenido-vista"></div>
     </main>
-  </div>
-
-  <!-- Pantalla de Login Profesional con fondo de carnicería (Bloquea todo hasta autenticarse) -->
-  <div id="vista-login">
-    <div class="login-card-pro">
-      <div class="login-logo-header">
-        <div class="login-logo-badge">
-          <span style="font-size: 2rem; line-height: 1;">🥩</span>
-        </div>
-        <span class="login-marca-tag">CALIDAD SELECTA NACIONAL</span>
-        <h2 style="color: #1A202C; font-size: 1.45rem; font-weight: 800; margin-top: 4px;">Acceso Administrativo</h2>
-        <p style="color: #718096; font-size: 0.85rem; margin-top: 4px;">Control de Inventario, Ventas e Historial</p>
-      </div>
-
-      <form onsubmit="ejecutarLogin(event)">
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #2D3748;">Usuario:</label>
-          <input type="text" id="login-usuario" class="form-control" required placeholder="Ingresa tu usuario" autocomplete="username">
-        </div>
-        <div style="margin-bottom: 24px;">
-          <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #2D3748;">Contraseña:</label>
-          <input type="text" id="login-password" class="form-control" required placeholder="Ingresa tu contraseña" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false">
-        </div>
-        <button type="submit" class="btn login-btn-pro">
-          Iniciar Sesión
-        </button>
-      </form>
-    </div>
   </div>
 
   <div id="modal-global" class="modal-overlay">

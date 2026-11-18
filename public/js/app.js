@@ -2,7 +2,6 @@
 
 let vistaActual = 'dashboard';
 let graficasInstanciadas = {};
-let passwordLoginReal = '';
 
 function alternarSidebar() {
   const sidebar = document.getElementById('sidebar-menu');
@@ -28,127 +27,11 @@ window.addEventListener('popstate', (e) => {
   navegar(vista, false);
 });
 
-// Enmascara la contraseña con asteriscos manteniendo el valor real
-function inicializarCampoPassword() {
-  const input = document.getElementById('login-password');
-  if (!input) return;
-
-  input.addEventListener('beforeinput', (e) => {
-    const inicio = input.selectionStart ?? passwordLoginReal.length;
-    const fin = input.selectionEnd ?? inicio;
-    let nuevo = passwordLoginReal;
-    let cursor = inicio;
-
-    if (e.inputType === 'insertText' || e.inputType === 'insertFromPaste' || e.inputType === 'insertReplacementText') {
-      const texto = e.data ?? '';
-      nuevo = passwordLoginReal.slice(0, inicio) + texto + passwordLoginReal.slice(fin);
-      cursor = inicio + texto.length;
-    } else if (e.inputType === 'deleteContentBackward') {
-      if (inicio === fin) {
-        nuevo = passwordLoginReal.slice(0, Math.max(0, inicio - 1)) + passwordLoginReal.slice(inicio);
-        cursor = Math.max(0, inicio - 1);
-      } else {
-        nuevo = passwordLoginReal.slice(0, inicio) + passwordLoginReal.slice(fin);
-        cursor = inicio;
-      }
-    } else if (e.inputType === 'deleteContentForward') {
-      if (inicio === fin) {
-        nuevo = passwordLoginReal.slice(0, inicio) + passwordLoginReal.slice(inicio + 1);
-        cursor = inicio;
-      } else {
-        nuevo = passwordLoginReal.slice(0, inicio) + passwordLoginReal.slice(fin);
-        cursor = inicio;
-      }
-    } else {
-      return;
-    }
-
-    e.preventDefault();
-    passwordLoginReal = nuevo;
-    input.value = '*'.repeat(nuevo.length);
-    input.setSelectionRange(cursor, cursor);
-  });
-
-  // Respaldo para autocompletado o navegadores sin beforeinput
-  input.addEventListener('input', () => {
-    const valor = input.value;
-    const nuevos = valor.replace(/\*/g, '');
-    if (nuevos) {
-      passwordLoginReal = nuevos;
-    } else if (valor.length < passwordLoginReal.length) {
-      passwordLoginReal = passwordLoginReal.slice(0, valor.length);
-    }
-    input.value = '*'.repeat(passwordLoginReal.length);
-    input.setSelectionRange(input.value.length, input.value.length);
-  });
-}
-
-// Gestión de Autenticación
-function verificarSesion() {
-  const token = localStorage.getItem('token_carniceria');
-  const vistaLogin = document.getElementById('vista-login');
-  const appPrivada = document.getElementById('app-privada');
-
-  if (!token) {
-    if (appPrivada) appPrivada.style.display = 'none';
-    if (vistaLogin) vistaLogin.style.display = 'flex';
-    return false;
-  }
-
-  if (vistaLogin) vistaLogin.style.display = 'none';
-  if (appPrivada) appPrivada.style.display = 'flex';
-
-  const usuario = JSON.parse(localStorage.getItem('usuario_carniceria') || '{}');
-  if (usuario.nombre && document.getElementById('usuario-nombre')) {
-    document.getElementById('usuario-nombre').innerText = usuario.nombre;
-  }
-  return true;
-}
-
-async function ejecutarLogin(e) {
-  if (e) e.preventDefault();
-  const usuario = document.getElementById('login-usuario').value.trim();
-  const password = passwordLoginReal;
-
-  try {
-    const res = await API.post('/api/auth/login', { usuario, password });
-    localStorage.setItem('token_carniceria', res.datos.token);
-    localStorage.setItem('usuario_carniceria', JSON.stringify(res.datos.usuario));
-    API.mostrarToast(`Bienvenido, ${res.datos.usuario.nombre}`, 'exito');
-    
-    passwordLoginReal = '';
-    document.getElementById('login-password').value = '';
-    document.getElementById('vista-login').style.display = 'none';
-    document.getElementById('app-privada').style.display = 'flex';
-
-    if (document.getElementById('usuario-nombre')) {
-      document.getElementById('usuario-nombre').innerText = res.datos.usuario.nombre;
-    }
-    const vista = obtenerVistaDesdeRuta();
-    navegar(vista, false);
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-function cerrarSesion() {
-  localStorage.removeItem('token_carniceria');
-  localStorage.removeItem('usuario_carniceria');
-  passwordLoginReal = '';
-  document.getElementById('login-password').value = '';
-  document.getElementById('app-privada').style.display = 'none';
-  document.getElementById('vista-login').style.display = 'flex';
-  API.mostrarToast('Sesión cerrada con éxito', 'info');
-}
-
 async function iniciarApp() {
-  inicializarCampoPassword();
   verificarSalud();
   setInterval(verificarSalud, 10000);
-  if (verificarSesion()) {
-    const vistaInicial = obtenerVistaDesdeRuta();
-    navegar(vistaInicial, false);
-  }
+  const vistaInicial = obtenerVistaDesdeRuta();
+  navegar(vistaInicial, false);
 }
 
 async function verificarSalud() {

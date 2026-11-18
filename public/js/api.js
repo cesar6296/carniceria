@@ -22,16 +22,6 @@ const API = {
         datos = { mensaje: texto.slice(0, 200) || 'Respuesta inválida del servidor' };
       }
 
-      if (respuesta.status === 401 && !url.includes('/api/auth/login')) {
-        localStorage.removeItem('token_carniceria');
-        localStorage.removeItem('usuario_carniceria');
-        const vistaLogin = document.getElementById('vista-login');
-        const appPrivada = document.getElementById('app-privada');
-        if (vistaLogin) vistaLogin.style.display = 'flex';
-        if (appPrivada) appPrivada.style.display = 'none';
-        API.mostrarToast('Tu sesión expiró. Inicia sesión de nuevo.', 'info');
-      }
-
       if (!respuesta.ok) {
         throw new Error(datos.mensaje || 'Error en la solicitud');
       }

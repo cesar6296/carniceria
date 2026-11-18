@@ -4,6 +4,8 @@
 
 Sistema web integral full stack para carnicería con presencia multirregional, combinando **MySQL** (para catálogos estructurados y relacionales) y **MongoDB** (para ventas de alta concurrencia, lotes con rotación FIFO, mermas operativas e historial regional precalculado).
 
+> La aplicación **no pide login**: al abrir la URL entra directo al dashboard. Todas las rutas de la API son de acceso abierto.
+
 ---
 
 ## Requisitos del Sistema
@@ -38,7 +40,7 @@ Contenido del archivo `.env`:
 PORT=3000
 NODE_ENV=development
 
-# Seguridad (obligatorio en producción)
+# Seguridad (opcional: la app abre sin login)
 JWT_SECRET=una_clave_larga_y_aleatoria
 
 # MySQL
@@ -115,7 +117,7 @@ En *Project Settings → Environment Variables* agrega:
 | `MYSQL_PASSWORD` | `tu_clave` |
 | `MYSQL_DATABASE` | `carniceria` |
 | `MYSQL_SSL` | `true` (según tu proveedor) |
-| `JWT_SECRET` | una clave larga y aleatoria |
+| `JWT_SECRET` | opcional: la app ya no pide login |
 | `NODE_ENV` | `production` |
 
 ### 3. Poblar MongoDB antes de desplegar
@@ -133,8 +135,7 @@ O conecta el repositorio desde el panel de Vercel. No hace falta comando de buil
 ### 5. Verificar
 - `https://tu-proyecto.vercel.app/api/salud` debe responder `ok`.
 - Si `mongodb` o `mysql` salen en error, revisa las variables de entorno y la lista de IP permitidas.
-- Si ves `codigo: "JWT_SECRET_FALTANTE"`, falta agregar `JWT_SECRET` en Vercel.
-- Si ves `codigo: "MONGODB_NO_DISPONIBLE"`, la `MONGODB_URI` está mal o Atlas bloquea la IP.
+- Si ves `codigo: "MONGODB_NO_DISPONIBLE"`, la `MONGODB_URI` falta o Atlas bloquea la IP.
 
 > **Importante:** en Vercel no se usa `mongodb-memory-server` (solo existe como dependencia de desarrollo). Sin `MONGODB_URI` válida la app responde 503 en las rutas privadas. Sin MySQL remoto la app entra en modo demostración con los catálogos en memoria y los cambios no se guardan entre peticiones.
 
@@ -159,7 +160,6 @@ O conecta el repositorio desde el panel de Vercel. No hace falta comando de buil
 | `codigo: "MONGODB_NO_DISPONIBLE"` en Vercel | Falta `MONGODB_URI`, quedó en `localhost` o Atlas bloquea la IP | Agrega `MONGODB_URI` en *Production*, **vuelve a desplegar** y abre `/api/salud` para ver el detalle exacto |
 | Cambié variables y no surten efecto | Vercel no actualiza despliegues existentes | *Deployments* → menú `...` → **Redeploy** |
 | `MongoServerError: bad auth` | Contraseña de Atlas incorrecta o con símbolos sin codificar | Recuerda que `@` = `%40`, `:` = `%3A`, `/` = `%2F`, `#` = `%23` |
-| `Falta la variable de entorno JWT_SECRET` | No configuraste el secreto en producción | Agrega `JWT_SECRET` en Vercel o en tu `.env` |
 | `No se pudo conectar a MongoDB` en Vercel | `MONGODB_URI` vacía o IP bloqueada | Configura Atlas y permite `0.0.0.0/0`; en Vercel no existe MongoDB en memoria |
 | `Puerto 3000 en uso` | Conflicto de puertos | Cambia `PORT=3001` en `.env` |
 
