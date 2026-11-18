@@ -3,16 +3,34 @@
 const API = {
   async peticion(url, opciones = {}) {
     try {
+      const token = localStorage.getItem('token_carniceria');
       const config = {
+        ...opciones,
         headers: {
           'Content-Type': 'application/json',
-          ...opciones.headers
-        },
-        ...opciones
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(opciones.headers || {})
+        }
       };
 
       const respuesta = await fetch(url, config);
-      const datos = await respuesta.json();
+      const texto = await respuesta.text();
+      let datos = {};
+      try {
+        datos = texto ? JSON.parse(texto) : {};
+      } catch (e) {
+        datos = { mensaje: texto.slice(0, 200) || 'Respuesta inválida del servidor' };
+      }
+
+      if (respuesta.status === 401 && !url.includes('/api/auth/login')) {
+        localStorage.removeItem('token_carniceria');
+        localStorage.removeItem('usuario_carniceria');
+        const vistaLogin = document.getElementById('vista-login');
+        const appPrivada = document.getElementById('app-privada');
+        if (vistaLogin) vistaLogin.style.display = 'flex';
+        if (appPrivada) appPrivada.style.display = 'none';
+        API.mostrarToast('Tu sesión expiró. Inicia sesión de nuevo.', 'info');
+      }
 
       if (!respuesta.ok) {
         throw new Error(datos.mensaje || 'Error en la solicitud');

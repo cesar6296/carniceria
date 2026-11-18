@@ -7,16 +7,22 @@ const Venta = require('./models/Venta');
 const PORT = process.env.PORT || 3000;
 
 async function iniciarServidor() {
-  await conectarMongoDB();
-
   try {
-    const totalVentas = await Venta.countDocuments();
-    if (totalVentas === 0) {
-      const seedScript = require('../scripts/seed_mongo');
-      await seedScript(false);
+    await conectarMongoDB();
+  } catch (error) {
+    console.error('No se pudo conectar a MongoDB:', error.message);
+  }
+
+  if (process.env.AUTO_SEED !== 'false') {
+    try {
+      const totalVentas = await Venta.countDocuments();
+      if (totalVentas === 0) {
+        const seedScript = require('../scripts/seed_mongo');
+        await seedScript(false);
+      }
+    } catch (seedErr) {
+      console.error(seedErr.message);
     }
-  } catch (seedErr) {
-    console.error(seedErr.message);
   }
 
   const servidor = app.listen(PORT, () => {

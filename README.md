@@ -6,15 +6,15 @@ Sistema web integral full stack para carnicería con presencia multirregional, c
 
 ---
 
-## 📋 Requisitos del Sistema
+## Requisitos del Sistema
 
-- **Node.js LTS** (v18 o superior) con **npm** (probado con Node v22.x).
+- **Node.js LTS** (v20 o superior) con **npm** (probado con Node v22.x).
 - **MySQL Server 8** (local, XAMPP o Docker).
 - **MongoDB** (MongoDB Atlas clúster gratuito M0 recomendado, o MongoDB Community local).
 
 ---
 
-## 🚀 Instalación y Puesta en Marcha
+## Instalación y Puesta en Marcha
 
 ### 1. Clonar e Instalar Dependencias
 ```bash
@@ -38,12 +38,16 @@ Contenido del archivo `.env`:
 PORT=3000
 NODE_ENV=development
 
+# Seguridad (obligatorio en producción)
+JWT_SECRET=una_clave_larga_y_aleatoria
+
 # MySQL
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=tu_contraseña
 MYSQL_DATABASE=carniceria
+MYSQL_SSL=false
 
 # MongoDB (Ejemplo MongoDB Atlas)
 MONGODB_URI=mongodb+srv://USUARIO:CONTRASEÑA@cluster0.xxxxx.mongodb.net/carniceria
@@ -84,6 +88,58 @@ npm test
 
 ---
 
+## Despliegue en Vercel
+
+El proyecto ya incluye `vercel.json`, la función serverless en `api/` y el adaptador `src/vercelHandler.js`. Vercel sirve `public/` como sitio estático desde su CDN y ejecuta Express en `/api/*`.
+
+Cómo queda el enrutamiento (definido en `vercel.json`):
+- `framework: null` desactiva la autodetección para que no choque con la configuración manual.
+- `outputDirectory: public` publica `index.html`, `css/` y `js/`, sin exponer `src/`, `sql/` ni `.env`.
+- `/api/*` se manda a la función `api/index.js` (Express completo).
+- Cualquier otra ruta (`/dashboard`, `/inventario`, etc.) devuelve `index.html`, así que recargar la página en cualquier vista funciona.
+
+### 1. Bases de datos remotas
+Vercel no tiene acceso a `localhost`, así que necesitas:
+- **MongoDB Atlas** (plan gratuito M0). En *Network Access* agrega `0.0.0.0/0`.
+- **MySQL remoto**: Aiven, PlanetScale, Railway, Clever Cloud, etc. Ejecuta `sql/01_esquema.sql` y `sql/02_datos_base.sql` en ese servidor. Si la base ya existía, ejecuta también `sql/03_migracion_creado_en.sql`.
+
+### 2. Variables de entorno en Vercel
+En *Project Settings → Environment Variables* agrega:
+
+| Variable | Ejemplo |
+|---|---|
+| `MONGODB_URI` | `mongodb+srv://usuario:clave@cluster0.xxxxx.mongodb.net/carniceria` |
+| `MYSQL_HOST` | `tu-host.aivencloud.com` |
+| `MYSQL_PORT` | `12345` |
+| `MYSQL_USER` | `avnadmin` |
+| `MYSQL_PASSWORD` | `tu_clave` |
+| `MYSQL_DATABASE` | `carniceria` |
+| `MYSQL_SSL` | `true` (según tu proveedor) |
+| `JWT_SECRET` | una clave larga y aleatoria |
+| `NODE_ENV` | `production` |
+
+### 3. Poblar MongoDB antes de desplegar
+El seed **no** se ejecuta en Vercel. Córrelo desde tu computadora apuntando a Atlas:
+```bash
+MONGODB_URI="mongodb+srv://usuario:clave@cluster0.xxxxx.mongodb.net/carniceria" npm run seed
+```
+
+### 4. Desplegar
+```bash
+npx vercel
+```
+O conecta el repositorio desde el panel de Vercel. No hace falta comando de build.
+
+### 5. Verificar
+- `https://tu-proyecto.vercel.app/api/salud` debe responder `ok`.
+- Si `mongodb` o `mysql` salen en error, revisa las variables de entorno y la lista de IP permitidas.
+- Si ves `codigo: "JWT_SECRET_FALTANTE"`, falta agregar `JWT_SECRET` en Vercel.
+- Si ves `codigo: "MONGODB_NO_DISPONIBLE"`, la `MONGODB_URI` está mal o Atlas bloquea la IP.
+
+> **Importante:** en Vercel no se usa `mongodb-memory-server` (solo existe como dependencia de desarrollo). Sin `MONGODB_URI` válida la app responde 503 en las rutas privadas. Sin MySQL remoto la app entra en modo demostración con los catálogos en memoria y los cambios no se guardan entre peticiones.
+
+---
+
 ## Reparto de Datos entre Bases de Datos
 
 | Base de Datos | Entidades / Colecciones | Propósito |
@@ -93,12 +149,14 @@ npm test
 
 ---
 
-## 🔍 Problemas Comunes y Soluciones
+## Problemas Comunes y Soluciones
 
 | Problema | Causa | Solución |
 |---|---|---|
 | `ER_ACCESS_DENIED_ERROR` | Credenciales de MySQL incorrectas | Revisa `MYSQL_USER` y `MYSQL_PASSWORD` en `.env` |
 | `ECONNREFUSED 127.0.0.1:3306` | Servicio de MySQL apagado | Inicia MySQL desde tus servicios del sistema o XAMPP |
 | `MongoServerSelectionError` | MongoDB Atlas bloquea la IP | En Atlas ve a *Network Access* y agrega `0.0.0.0/0` |
+| `Falta la variable de entorno JWT_SECRET` | No configuraste el secreto en producción | Agrega `JWT_SECRET` en Vercel o en tu `.env` |
+| `No se pudo conectar a MongoDB` en Vercel | `MONGODB_URI` vacía o IP bloqueada | Configura Atlas y permite `0.0.0.0/0`; en Vercel no existe MongoDB en memoria |
 | `Puerto 3000 en uso` | Conflicto de puertos | Cambia `PORT=3001` en `.env` |
 

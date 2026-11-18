@@ -26,12 +26,12 @@ function obtenerCorteAleatorioParaRegion(regionId, cortes) {
 }
 
 async function ejecutarSeed(desconectarAlTerminar = true) {
-  console.log('🌱 Iniciando script de Seed para MongoDB...');
+  console.log('Iniciando script de Seed para MongoDB...');
   if (mongoose.connection.readyState !== 1) {
     await conectarMongoDB();
   }
 
-  console.log('🧹 Limpiando colecciones anteriores...');
+  console.log('Limpiando colecciones anteriores...');
   await Venta.deleteMany({});
   await InventarioLote.deleteMany({});
   await Merma.deleteMany({});
@@ -42,7 +42,7 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   const cortes = await CatalogoRepository.listarCortes();
   const clientes = await CatalogoRepository.listarClientes();
 
-  console.log(`📊 Catálogos cargados: ${sucursales.length} sucursales, ${cortes.length} cortes, ${clientes.length} clientes.`);
+  console.log(`Catálogos cargados: ${sucursales.length} sucursales, ${cortes.length} cortes, ${clientes.length} clientes.`);
 
   // 1. Generar Lotes de Inventario por sucursal y corte
   const lotesInsertados = [];
@@ -77,7 +77,7 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
       }
     }
   }
-  console.log(`✅ ${lotesInsertados.length} lotes de inventario creados.`);
+  console.log(`${lotesInsertados.length} lotes de inventario creados.`);
 
   // 2. Generar 1,600 ventas
   console.log('🥩 Generando 1,600 ventas históricas...');
@@ -164,7 +164,7 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   }
 
   await Venta.insertMany(ventasAGuardar);
-  console.log(`✅ ${ventasAGuardar.length} ventas insertadas.`);
+  console.log(`${ventasAGuardar.length} ventas insertadas.`);
 
   // 3. Mermas
   const motivos = ['caducidad', 'mal_corte', 'descongelado', 'contaminacion'];
@@ -207,7 +207,7 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   }
 
   await Merma.insertMany(mermasAGuardar);
-  console.log(`✅ ${mermasAGuardar.length} registros de merma insertados.`);
+  console.log(`${mermasAGuardar.length} registros de merma insertados.`);
 
   // 4. Historial Regional
   const docsHistorial = Object.values(mapaHistorial).map(h => ({
@@ -218,7 +218,7 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   }));
 
   await HistorialRegional.insertMany(docsHistorial);
-  console.log(`✅ ${docsHistorial.length} registros insertados en historial_regional.`);
+  console.log(`${docsHistorial.length} registros insertados en historial_regional.`);
 
   // 5. Lecturas de refrigeración
   const lecturas = [];
@@ -237,7 +237,7 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   }
   await LecturaRefrigeracion.insertMany(lecturas);
 
-  console.log('🌱 Seed finalizado con éxito.');
+  console.log('Seed finalizado con éxito.');
 
   if (desconectarAlTerminar) {
     await mongoose.disconnect();

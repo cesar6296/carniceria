@@ -4,9 +4,9 @@ const jwt = require('jsonwebtoken');
 const { body } = require('express-validator');
 const CatalogoRepository = require('../repositories/catalogoRepository');
 const { validarCampos } = require('../middlewares/errorMiddleware');
+const { obtenerJwtSecret } = require('../config/jwt');
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'carniceria_secreto_super_seguro_2026';
 
 router.post(
   '/login',
@@ -36,7 +36,7 @@ router.post(
           usuario: cuenta.usuario,
           rol: cuenta.rol
         },
-        JWT_SECRET,
+        obtenerJwtSecret(),
         { expiresIn: '8h' }
       );
 
@@ -67,9 +67,12 @@ router.get('/perfil', (req, res) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decodificado = jwt.verify(token, JWT_SECRET);
+    const decodificado = jwt.verify(token, obtenerJwtSecret());
     res.json({ ok: true, usuario: decodificado });
   } catch (err) {
+    if (err.codigo === 'JWT_SECRET_FALTANTE') {
+      return res.status(503).json({ ok: false, codigo: err.codigo, mensaje: err.message });
+    }
     res.status(401).json({ ok: false, mensaje: 'Token inválido o expirado' });
   }
 });
