@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const { conectarMongoDB } = require('../src/config/mongo');
+const { conectarMongoDB, probarConexionMongo } = require('../src/config/mongo');
 const CatalogoRepository = require('../src/repositories/catalogoRepository');
 const Venta = require('../src/models/Venta');
 const HistorialRegional = require('../src/models/HistorialRegional');
@@ -110,6 +110,11 @@ async function ejecutarSeed() {
   }
 
   await conectarMongoDB();
+  if (probarConexionMongo().tipo === 'mongodb-memory') {
+    await mongoose.disconnect();
+    throw new Error('MongoDB Atlas no respondió y se activó la memoria temporal. Corrige MONGODB_URI antes de cargar datos persistentes.');
+  }
+
   const folios = datos.ventas.map(venta => venta.folio);
   const existentes = await Venta.find({ folio: { $in: folios } }).distinct('folio');
   const foliosExistentes = new Set(existentes);
@@ -117,6 +122,7 @@ async function ejecutarSeed() {
 
   if (!ventasNuevas.length) {
     console.log('Estas ventas ya estaban cargadas; no se agregaron duplicados.');
+    await mongoose.disconnect();
     return;
   }
 
