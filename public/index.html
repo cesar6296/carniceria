@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#8B0000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>🥩 Carnicería SuKarne Regional - Sistema de Gestión</title>
+  <link rel="stylesheet" href="/css/estilos.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Overlay móvil para cerrar sidebar al hacer clic fuera -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="alternarSidebar()"></div>
+
+  <!-- Barra lateral de navegación -->
+  <aside class="sidebar" id="sidebar-menu">
+    <div class="logo-area">
+      <span style="font-size: 1.8rem;">🥩</span>
+      <div style="flex: 1;">
+        <h2>CARNICERÍA</h2>
+        <span style="font-size: 0.75rem; color: #E2E8F0; text-transform: uppercase; letter-spacing: 0.5px;">Calidad Selecta</span>
+      </div>
+      <button class="btn-menu-movil" onclick="alternarSidebar()" style="color: #FFF; font-size: 1.3rem;">✕</button>
+    </div>
+    <nav class="menu">
+      <a href="/dashboard" class="activo" onclick="irA(event, 'dashboard')">📊 Dashboard & KPIs</a>
+      <a href="/nueva-venta" onclick="irA(event, 'nueva-venta')">🛒 Nueva Venta</a>
+      <a href="/historial-ventas" onclick="irA(event, 'historial-ventas')">🧾 Historial de Ventas</a>
+      <a href="/inventario" onclick="irA(event, 'inventario')">📦 Inventario de Lotes</a>
+      <a href="/mermas" onclick="irA(event, 'mermas')">⚠️ Registro de Mermas</a>
+      <a href="/historial-regional" onclick="irA(event, 'historial-regional')">🗺️ Historial Regional</a>
+      <a href="/cortes" onclick="irA(event, 'cortes')">🔪 Catálogo de Cortes</a>
+      <a href="/clientes" onclick="irA(event, 'clientes')">👥 Clientes</a>
+    </nav>
+    <div style="padding: 16px 20px; border-top: 1px solid #2D3748; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div id="usuario-nombre" style="font-size: 0.85rem; font-weight: 700; color: #FFF;">Uzielito Remix</div>
+        <div style="font-size: 0.72rem; color: #A0AEC0;">Administrador</div>
+      </div>
+      <button onclick="cerrarSesion()" title="Cerrar sesión" class="btn" style="background: rgba(229, 62, 62, 0.15); color: #E53E3E; padding: 6px 10px; min-height: auto; border-radius: 6px;">🚪 Salir</button>
+    </div>
+  </aside>
+
+  <!-- Contenedor principal -->
+  <main class="main-content">
+    <header class="topbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button class="btn-menu-movil" onclick="alternarSidebar()">☰</button>
+        <h2 id="vista-titulo">Panel General</h2>
+      </div>
+      <div id="estado-sistema" class="badge-salud">
+        <span class="punto-indicador"></span>
+        <span id="texto-salud">Verificando bases de datos...</span>
+      </div>
+    </header>
+
+    <div class="contenedor" id="contenido-vista">
+      <!-- Vistas dinámicas -->
+    </div>
+  </main>
+
+  <!-- Pantalla de Login Profesional con fondo SuKarne -->
+  <div id="vista-login">
+    <div class="login-card-pro">
+      <div class="login-logo-header">
+        <div class="login-logo-badge">🥩</div>
+        <span class="login-marca-tag">CALIDAD SELECTA NACIONAL</span>
+        <h2 style="color: #1A202C; font-size: 1.45rem; font-weight: 800; margin-top: 4px;">Acceso Administrativo</h2>
+        <p style="color: #718096; font-size: 0.85rem; margin-top: 4px;">Control de Inventario, Ventas e Historial</p>
+      </div>
+
+      <form onsubmit="ejecutarLogin(event)">
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #2D3748;">Usuario:</label>
+          <input type="text" id="login-usuario" class="form-control" required placeholder="Ingresa tu usuario" autocomplete="username">
+        </div>
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #2D3748;">Contraseña:</label>
+          <input type="password" id="login-password" class="form-control" required placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn login-btn-pro">
+          Iniciar Sesión
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal genérico -->
+  <div id="modal-global" class="modal-overlay">
+    <div class="modal-caja" id="modal-cuerpo"></div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
