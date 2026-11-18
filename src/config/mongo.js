@@ -37,7 +37,8 @@ async function conectarMongoDB() {
 
     if (!uri) {
       if (esProduccion()) {
-        throw new Error('MONGODB_URI no está configurada en las variables de entorno');
+        ultimoError = new Error('MONGODB_URI no está configurada en las variables de entorno de Vercel');
+        throw ultimoError;
       }
       return iniciarMongoEnMemoria();
     }
@@ -89,8 +90,13 @@ function probarConexionMongo() {
   };
 }
 
+function obtenerUltimoErrorMongo() {
+  return ultimoError ? ultimoError.message : null;
+}
+
 module.exports = {
   conectarMongoDB,
   desconectarMongoDB,
-  probarConexionMongo
+  probarConexionMongo,
+  obtenerUltimoErrorMongo
 };

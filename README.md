@@ -156,6 +156,9 @@ O conecta el repositorio desde el panel de Vercel. No hace falta comando de buil
 | `ER_ACCESS_DENIED_ERROR` | Credenciales de MySQL incorrectas | Revisa `MYSQL_USER` y `MYSQL_PASSWORD` en `.env` |
 | `ECONNREFUSED 127.0.0.1:3306` | Servicio de MySQL apagado | Inicia MySQL desde tus servicios del sistema o XAMPP |
 | `MongoServerSelectionError` | MongoDB Atlas bloquea la IP | En Atlas ve a *Network Access* y agrega `0.0.0.0/0` |
+| `codigo: "MONGODB_NO_DISPONIBLE"` en Vercel | Falta `MONGODB_URI`, quedó en `localhost` o Atlas bloquea la IP | Agrega `MONGODB_URI` en *Production*, **vuelve a desplegar** y abre `/api/salud` para ver el detalle exacto |
+| Cambié variables y no surten efecto | Vercel no actualiza despliegues existentes | *Deployments* → menú `...` → **Redeploy** |
+| `MongoServerError: bad auth` | Contraseña de Atlas incorrecta o con símbolos sin codificar | Recuerda que `@` = `%40`, `:` = `%3A`, `/` = `%2F`, `#` = `%23` |
 | `Falta la variable de entorno JWT_SECRET` | No configuraste el secreto en producción | Agrega `JWT_SECRET` en Vercel o en tu `.env` |
 | `No se pudo conectar a MongoDB` en Vercel | `MONGODB_URI` vacía o IP bloqueada | Configura Atlas y permite `0.0.0.0/0`; en Vercel no existe MongoDB en memoria |
 | `Puerto 3000 en uso` | Conflicto de puertos | Cambia `PORT=3001` en `.env` |
