@@ -2,6 +2,7 @@
 
 let vistaActual = 'dashboard';
 let graficasInstanciadas = {};
+let passwordLoginReal = '';
 
 function alternarSidebar() {
   const sidebar = document.getElementById('sidebar-menu');
@@ -27,15 +28,76 @@ window.addEventListener('popstate', (e) => {
   navegar(vista, false);
 });
 
+// Enmascara la contraseña con asteriscos manteniendo el valor real
+function inicializarCampoPassword() {
+  const input = document.getElementById('login-password');
+  if (!input) return;
+
+  input.addEventListener('beforeinput', (e) => {
+    const inicio = input.selectionStart ?? passwordLoginReal.length;
+    const fin = input.selectionEnd ?? inicio;
+    let nuevo = passwordLoginReal;
+    let cursor = inicio;
+
+    if (e.inputType === 'insertText' || e.inputType === 'insertFromPaste' || e.inputType === 'insertReplacementText') {
+      const texto = e.data ?? '';
+      nuevo = passwordLoginReal.slice(0, inicio) + texto + passwordLoginReal.slice(fin);
+      cursor = inicio + texto.length;
+    } else if (e.inputType === 'deleteContentBackward') {
+      if (inicio === fin) {
+        nuevo = passwordLoginReal.slice(0, Math.max(0, inicio - 1)) + passwordLoginReal.slice(inicio);
+        cursor = Math.max(0, inicio - 1);
+      } else {
+        nuevo = passwordLoginReal.slice(0, inicio) + passwordLoginReal.slice(fin);
+        cursor = inicio;
+      }
+    } else if (e.inputType === 'deleteContentForward') {
+      if (inicio === fin) {
+        nuevo = passwordLoginReal.slice(0, inicio) + passwordLoginReal.slice(inicio + 1);
+        cursor = inicio;
+      } else {
+        nuevo = passwordLoginReal.slice(0, inicio) + passwordLoginReal.slice(fin);
+        cursor = inicio;
+      }
+    } else {
+      return;
+    }
+
+    e.preventDefault();
+    passwordLoginReal = nuevo;
+    input.value = '*'.repeat(nuevo.length);
+    input.setSelectionRange(cursor, cursor);
+  });
+
+  // Respaldo para autocompletado o navegadores sin beforeinput
+  input.addEventListener('input', () => {
+    const valor = input.value;
+    const nuevos = valor.replace(/\*/g, '');
+    if (nuevos) {
+      passwordLoginReal = nuevos;
+    } else if (valor.length < passwordLoginReal.length) {
+      passwordLoginReal = passwordLoginReal.slice(0, valor.length);
+    }
+    input.value = '*'.repeat(passwordLoginReal.length);
+    input.setSelectionRange(input.value.length, input.value.length);
+  });
+}
+
 // Gestión de Autenticación
 function verificarSesion() {
   const token = localStorage.getItem('token_carniceria');
   const vistaLogin = document.getElementById('vista-login');
+  const appPrivada = document.getElementById('app-privada');
+
   if (!token) {
+    if (appPrivada) appPrivada.style.display = 'none';
     if (vistaLogin) vistaLogin.style.display = 'flex';
     return false;
   }
+
   if (vistaLogin) vistaLogin.style.display = 'none';
+  if (appPrivada) appPrivada.style.display = 'flex';
+
   const usuario = JSON.parse(localStorage.getItem('usuario_carniceria') || '{}');
   if (usuario.nombre && document.getElementById('usuario-nombre')) {
     document.getElementById('usuario-nombre').innerText = usuario.nombre;
@@ -46,14 +108,19 @@ function verificarSesion() {
 async function ejecutarLogin(e) {
   if (e) e.preventDefault();
   const usuario = document.getElementById('login-usuario').value.trim();
-  const password = document.getElementById('login-password').value;
+  const password = passwordLoginReal;
 
   try {
     const res = await API.post('/api/auth/login', { usuario, password });
     localStorage.setItem('token_carniceria', res.datos.token);
     localStorage.setItem('usuario_carniceria', JSON.stringify(res.datos.usuario));
-    API.mostrarToast(`¡Bienvenido, ${res.datos.usuario.nombre}!`, 'exito');
+    API.mostrarToast(`Bienvenido, ${res.datos.usuario.nombre}`, 'exito');
+    
+    passwordLoginReal = '';
+    document.getElementById('login-password').value = '';
     document.getElementById('vista-login').style.display = 'none';
+    document.getElementById('app-privada').style.display = 'flex';
+
     if (document.getElementById('usuario-nombre')) {
       document.getElementById('usuario-nombre').innerText = res.datos.usuario.nombre;
     }
@@ -67,11 +134,15 @@ async function ejecutarLogin(e) {
 function cerrarSesion() {
   localStorage.removeItem('token_carniceria');
   localStorage.removeItem('usuario_carniceria');
+  passwordLoginReal = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('app-privada').style.display = 'none';
   document.getElementById('vista-login').style.display = 'flex';
   API.mostrarToast('Sesión cerrada con éxito', 'info');
 }
 
 async function iniciarApp() {
+  inicializarCampoPassword();
   verificarSalud();
   setInterval(verificarSalud, 10000);
   if (verificarSesion()) {
@@ -129,35 +200,35 @@ function navegar(vista, actualizarUrl = true) {
 
   switch (vista) {
     case 'dashboard':
-      titulo.innerText = '📊 Dashboard y Resumen Ejecutivo';
+      titulo.innerText = 'Dashboard y Resumen Ejecutivo';
       renderizarDashboard(contenedor);
       break;
     case 'nueva-venta':
-      titulo.innerText = '🛒 Registrar Nueva Venta (Punto de Venta)';
+      titulo.innerText = 'Registrar Nueva Venta';
       renderizarNuevaVenta(contenedor);
       break;
     case 'historial-ventas':
-      titulo.innerText = '🧾 Historial de Ventas Realizadas';
+      titulo.innerText = 'Historial de Ventas';
       renderizarHistorialVentas(contenedor);
       break;
     case 'inventario':
-      titulo.innerText = '📦 Control de Inventario por Lotes (FIFO)';
+      titulo.innerText = 'Control de Inventario por Lotes (FIFO)';
       renderizarInventario(contenedor);
       break;
     case 'mermas':
-      titulo.innerText = '⚠️ Registro y Control de Mermas';
+      titulo.innerText = 'Registro y Control de Mermas';
       renderizarMermas(contenedor);
       break;
     case 'historial-regional':
-      titulo.innerText = '🗺️ Historial Regional Acumulado (Tendencias de Mercado)';
+      titulo.innerText = 'Historial Regional Acumulado';
       renderizarHistorialRegional(contenedor);
       break;
     case 'cortes':
-      titulo.innerText = '🔪 Catálogo de Cortes de Carne (MySQL)';
+      titulo.innerText = 'Catálogo de Cortes de Carne';
       renderizarCortes(contenedor);
       break;
     case 'clientes':
-      titulo.innerText = '👥 Gestión de Clientes (MySQL)';
+      titulo.innerText = 'Gestión de Clientes';
       renderizarClientes(contenedor);
       break;
   }
@@ -176,15 +247,15 @@ async function renderizarDashboard(c) {
 
     <div class="grid-graficas">
       <div class="tarjeta-grafica">
-        <h4>📈 Ingresos Mensuales</h4>
+        <h4>Ingresos Mensuales</h4>
         <canvas id="grafica-meses"></canvas>
       </div>
       <div class="tarjeta-grafica">
-        <h4>🗺️ Ventas por Región</h4>
+        <h4>Ventas por Región</h4>
         <canvas id="grafica-regiones"></canvas>
       </div>
       <div class="tarjeta-grafica">
-        <h4>🥩 Top Cortes Más Vendidos</h4>
+        <h4>Top Cortes Más Vendidos</h4>
         <canvas id="grafica-cortes"></canvas>
       </div>
     </div>
@@ -199,11 +270,13 @@ async function renderizarDashboard(c) {
     ]);
 
     const k = resumen.datos;
-    document.getElementById('kpi-ingresos').innerText = API.formatoMoneda(k.ingresos);
+    if (!document.getElementById('kpi-ingresos')) return;
+    const formatoMonedaKPI = (valor) => API.formatoMoneda(valor).replace(' MXN', '<span class="etiqueta-moneda">MXN</span>');
+    document.getElementById('kpi-ingresos').innerHTML = formatoMonedaKPI(k.ingresos);
     document.getElementById('kpi-kg').innerText = API.formatoKg(k.kg_vendidos);
     document.getElementById('kpi-ventas').innerText = k.num_ventas;
-    document.getElementById('kpi-mermas').innerText = API.formatoMoneda(k.costo_merma);
-    document.getElementById('kpi-ganancia').innerText = API.formatoMoneda(k.ganancia_estimada);
+    document.getElementById('kpi-mermas').innerHTML = formatoMonedaKPI(k.costo_merma);
+    document.getElementById('kpi-ganancia').innerHTML = formatoMonedaKPI(k.ganancia_estimada);
 
     // Gráfica Meses
     const ctxMeses = document.getElementById('grafica-meses').getContext('2d');
@@ -325,6 +398,7 @@ async function renderizarNuevaVenta(c) {
     catalogoCortesCache = cortes.datos;
 
     const selSuc = document.getElementById('sel-sucursal');
+    if (!selSuc) return;
     selSuc.innerHTML = sucursales.datos.map(s => `<option value="${s.id}">${s.nombre} (${s.region_nombre})</option>`).join('');
 
     const selCli = document.getElementById('sel-cliente');
@@ -379,7 +453,7 @@ function actualizarTablaCarrito() {
         <td>${API.formatoMoneda(item.precio_kg)}</td>
         <td>${item.kg} kg</td>
         <td><strong>${API.formatoMoneda(item.subtotal)}</strong></td>
-        <td><button onclick="eliminarDelCarrito(${idx})" style="background: none; border: none; cursor: pointer; color: var(--color-peligro);">✕</button></td>
+        <td><button onclick="eliminarDelCarrito(${idx})" style="background: none; border: none; cursor: pointer; color: var(--color-peligro);">&times;</button></td>
       </tr>
     `;
   }).join('');
@@ -412,7 +486,7 @@ async function finalizarVenta() {
   } catch (e) {
     // Manejo de error de stock
     if (e.message && e.message.includes('Stock insuficiente')) {
-      alert(`⚠️ ALERTA DE INVENTARIO:\n${e.message}\nPor favor registra un lote de inventario o reduce los kg.`);
+      alert(`ALERTA DE INVENTARIO:\n${e.message}\nPor favor registra un lote de inventario o reduce los kg.`);
     }
   }
 }
@@ -453,6 +527,7 @@ async function cargarVentasFiltradas() {
   try {
     const res = await API.get(`/api/ventas?q=${encodeURIComponent(q)}&limite=20`);
     const tbody = document.getElementById('tabla-ventas-cuerpo');
+    if (!tbody) return;
     if (!res.datos.ventas.length) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No se encontraron ventas.</td></tr>';
       return;
@@ -523,6 +598,7 @@ async function renderizarInventario(c) {
   try {
     const sucursales = await API.get('/api/sucursales');
     const sel = document.getElementById('sel-inv-sucursal');
+    if (!sel) return;
     sel.innerHTML = sucursales.datos.map(s => `<option value="${s.id}">${s.nombre} (${s.region_nombre})</option>`).join('');
     cargarInventarioSucursal();
   } catch (e) {
@@ -531,10 +607,13 @@ async function renderizarInventario(c) {
 }
 
 async function cargarInventarioSucursal() {
-  const sucursalId = document.getElementById('sel-inv-sucursal').value;
+  const selectSucursal = document.getElementById('sel-inv-sucursal');
+  if (!selectSucursal) return;
+  const sucursalId = selectSucursal.value;
   try {
     const res = await API.get(`/api/inventario?sucursal_id=${sucursalId}`);
     const tbody = document.getElementById('tabla-inv-cuerpo');
+    if (!tbody) return;
     if (!res.datos.length) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay lotes con stock en esta sucursal. Registre una entrada.</td></tr>';
       return;
@@ -554,8 +633,8 @@ async function cargarInventarioSucursal() {
         </td>
         <td>
           ${item.alerta_caducidad ? 
-            '<span style="background: #FED7D7; color: #742A2A; padding: 4px 8px; border-radius: 4px; font-weight: 600;">⚠️ Lote por vencer (≤ 3 días)</span>' : 
-            '<span style="color: var(--color-exito);">✅ Óptimo</span>'}
+            '<span style="background: #FED7D7; color: #742A2A; padding: 4px 8px; border-radius: 4px; font-weight: 600;">Lote por vencer (≤ 3 días)</span>' : 
+            '<span style="color: var(--color-exito); font-weight: 600;">Óptimo</span>'}
         </td>
       </tr>
     `).join('');
@@ -595,6 +674,7 @@ async function renderizarMermas(c) {
   try {
     const res = await API.get('/api/mermas?limite=30');
     const tbody = document.getElementById('tabla-mermas-cuerpo');
+    if (!tbody) return;
     if (!res.datos.length) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay mermas registradas.</td></tr>';
       return;
@@ -640,7 +720,7 @@ async function renderizarHistorialRegional(c) {
     </div>
 
     <div class="tarjeta-grafica" style="margin-bottom: 24px;">
-      <h4>🥩 Matriz de Consumo: ¿Qué tipo de carne se vende en cada región?</h4>
+      <h4>Matriz de Consumo: ¿Qué tipo de carne se vende en cada región?</h4>
       <canvas id="grafica-consumo-regional" style="max-height: 350px;"></canvas>
     </div>
 
@@ -674,6 +754,7 @@ async function renderizarHistorialRegional(c) {
     ]);
 
     const selReg = document.getElementById('filtro-hist-region');
+    if (!selReg) return;
     selReg.innerHTML += regiones.datos.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
 
     // Gráfica de barras agrupadas por región y tipo de carne
@@ -723,6 +804,7 @@ async function cargarHistorialRegional() {
   try {
     const res = await API.get(url);
     const tbody = document.getElementById('tabla-historial-cuerpo');
+    if (!tbody) return;
     if (!res.datos.length) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No hay registros acumulados para este filtro.</td></tr>';
       return;
@@ -748,7 +830,7 @@ async function cargarHistorialRegional() {
 async function renderizarCortes(c) {
   c.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h3 style="font-size: 1.1rem;">Catálogo Oficial de Cortes (MySQL)</h3>
+      <h3 style="font-size: 1.1rem;">Catálogo Oficial de Cortes</h3>
       <button class="btn btn-primario" onclick="abrirModalCorte()">+ Nuevo Corte</button>
     </div>
 
@@ -760,12 +842,13 @@ async function renderizarCortes(c) {
             <th>Nombre del Corte</th>
             <th>Tipo de Carne</th>
             <th>Precio por Kg</th>
+            <th>Fecha de Alta</th>
             <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="tabla-cortes-cuerpo">
-          <tr><td colspan="6" style="text-align: center;">Cargando cortes...</td></tr>
+          <tr><td colspan="7" style="text-align: center;">Cargando cortes...</td></tr>
         </tbody>
       </table>
     </div>
@@ -774,12 +857,14 @@ async function renderizarCortes(c) {
   try {
     const res = await API.get('/api/cortes');
     const tbody = document.getElementById('tabla-cortes-cuerpo');
+    if (!tbody) return;
     tbody.innerHTML = res.datos.map(corte => `
       <tr>
         <td>${corte.id}</td>
         <td><strong>${corte.nombre}</strong></td>
         <td><span style="text-transform: capitalize; background: #EDF2F7; padding: 2px 6px; border-radius: 4px;">${corte.tipo_carne}</span></td>
         <td><strong>${API.formatoMoneda(corte.precio_kg)}</strong></td>
+        <td>${API.formatoFecha(corte.creado_en || '-')}</td>
         <td>${corte.activo ? '<span style="color: var(--color-exito);">Activo</span>' : '<span style="color: var(--color-peligro);">Inactivo</span>'}</td>
         <td>
           <button class="btn btn-peligro" style="padding: 4px 8px; font-size: 0.75rem;" onclick="desactivarCorte(${corte.id})">Desactivar</button>
@@ -806,7 +891,7 @@ async function desactivarCorte(id) {
 async function renderizarClientes(c) {
   c.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h3 style="font-size: 1.1rem;">Directorio de Clientes (MySQL)</h3>
+      <h3 style="font-size: 1.1rem;">Directorio de Clientes</h3>
       <button class="btn btn-primario" onclick="abrirModalCliente()">+ Registrar Cliente</button>
     </div>
 
@@ -820,10 +905,11 @@ async function renderizarClientes(c) {
             <th>Teléfono</th>
             <th>Correo</th>
             <th>Ciudad / Región</th>
+            <th>Fecha de Registro</th>
           </tr>
         </thead>
         <tbody id="tabla-clientes-cuerpo">
-          <tr><td colspan="6" style="text-align: center;">Cargando clientes...</td></tr>
+          <tr><td colspan="7" style="text-align: center;">Cargando clientes...</td></tr>
         </tbody>
       </table>
     </div>
@@ -832,6 +918,7 @@ async function renderizarClientes(c) {
   try {
     const res = await API.get('/api/clientes');
     const tbody = document.getElementById('tabla-clientes-cuerpo');
+    if (!tbody) return;
     tbody.innerHTML = res.datos.map(cli => `
       <tr>
         <td>${cli.id}</td>
@@ -840,6 +927,7 @@ async function renderizarClientes(c) {
         <td>${cli.telefono || '-'}</td>
         <td>${cli.correo || '-'}</td>
         <td>${cli.ciudad || '-'} (${cli.region_nombre || 'Sin región'})</td>
+        <td>${API.formatoFecha(cli.creado_en || '-')}</td>
       </tr>
     `).join('');
   } catch (e) {
@@ -936,10 +1024,14 @@ function abrirModalLote() {
   `;
 
   API.get('/api/sucursales').then(s => {
-    document.getElementById('m-lote-sucursal').innerHTML = s.datos.map(suc => `<option value="${suc.id}">${suc.nombre}</option>`).join('');
+    const sel = document.getElementById('m-lote-sucursal');
+    if (!sel) return;
+    sel.innerHTML = s.datos.map(suc => `<option value="${suc.id}">${suc.nombre}</option>`).join('');
   });
   API.get('/api/cortes').then(c => {
-    document.getElementById('m-lote-corte').innerHTML = c.datos.filter(co => co.activo).map(co => `<option value="${co.id}">${co.nombre}</option>`).join('');
+    const sel = document.getElementById('m-lote-corte');
+    if (!sel) return;
+    sel.innerHTML = c.datos.filter(co => co.activo).map(co => `<option value="${co.id}">${co.nombre}</option>`).join('');
   });
 
   // Fecha de caducidad por defecto a 14 días
@@ -1019,6 +1111,7 @@ function abrirModalMerma() {
 
   API.get('/api/sucursales').then(s => {
     const sel = document.getElementById('m-merma-sucursal');
+    if (!sel) return;
     sel.innerHTML = s.datos.map(suc => `<option value="${suc.id}">${suc.nombre}</option>`).join('');
     cargarLotesParaMerma();
   });
@@ -1027,16 +1120,23 @@ function abrirModalMerma() {
 }
 
 async function cargarLotesParaMerma() {
-  const sucursalId = document.getElementById('m-merma-sucursal').value;
-  const res = await API.get(`/api/inventario?sucursal_id=${sucursalId}`);
-  const selLotes = document.getElementById('m-merma-lote');
-  const opciones = [];
-  res.datos.forEach(c => {
-    c.lotes.forEach(l => {
-      opciones.push(`<option value="${l._id}">${c.corte} - ${l.kg_disponibles} kg disponibles (Vence: ${new Date(l.fecha_caducidad).toLocaleDateString()})</option>`);
+  const selectSucursal = document.getElementById('m-merma-sucursal');
+  if (!selectSucursal) return;
+  const sucursalId = selectSucursal.value;
+  try {
+    const res = await API.get(`/api/inventario?sucursal_id=${sucursalId}`);
+    const selLotes = document.getElementById('m-merma-lote');
+    if (!selLotes) return;
+    const opciones = [];
+    res.datos.forEach(c => {
+      c.lotes.forEach(l => {
+        opciones.push(`<option value="${l._id}">${c.corte} - ${l.kg_disponibles} kg disponibles (Vence: ${new Date(l.fecha_caducidad).toLocaleDateString()})</option>`);
+      });
     });
-  });
-  selLotes.innerHTML = opciones.length ? opciones.join('') : '<option value="">No hay lotes con stock en esta sucursal</option>';
+    selLotes.innerHTML = opciones.length ? opciones.join('') : '<option value="">No hay lotes con stock en esta sucursal</option>';
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 async function guardarMerma() {

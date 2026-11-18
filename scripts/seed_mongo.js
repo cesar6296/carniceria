@@ -51,7 +51,10 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   for (const sucursal of sucursales) {
     for (const corte of cortes) {
       for (let l = 1; l <= 2; l++) {
-        const diasCaducidad = l === 1 ? Math.floor(Math.random() * 5) + 1 : Math.floor(Math.random() * 20) + 10;
+        const diasEntrada = Math.floor(Math.random() * 25) + 3;
+        const fechaEntrada = new Date(fechaHoy.getTime() - diasEntrada * 24 * 60 * 60 * 1000);
+
+        const diasCaducidad = l === 1 ? Math.floor(Math.random() * 4) + 1 : Math.floor(Math.random() * 18) + 8;
         const caducidad = new Date();
         caducidad.setDate(fechaHoy.getDate() + (l === 1 && Math.random() < 0.25 ? 2 : diasCaducidad));
 
@@ -66,6 +69,7 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
           kg_iniciales: kg,
           kg_disponibles: kg,
           costo_kg: costoKg,
+          fecha_entrada: fechaEntrada,
           fecha_caducidad: caducidad,
           estatus: 'activo'
         });
@@ -82,8 +86,13 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   const mapaHistorial = {};
 
   for (let i = 1; i <= 1650; i++) {
-    const diasAtras = Math.floor(Math.random() * 365);
+    // Distribución escalonada a lo largo de los últimos 365 días (evitando que todo caiga hoy)
+    const diasAtras = Math.floor(Math.random() * 360) + 1;
+    const horaAleatoria = Math.floor(Math.random() * 12) + 8; // 8 AM a 8 PM
+    const minutoAleatorio = Math.floor(Math.random() * 60);
     const fechaVenta = new Date(fechaHoy.getTime() - diasAtras * 24 * 60 * 60 * 1000);
+    fechaVenta.setHours(horaAleatoria, minutoAleatorio, 0, 0);
+
     const anio = fechaVenta.getFullYear();
     const mes = fechaVenta.getMonth() + 1;
 

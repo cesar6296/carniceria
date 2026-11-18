@@ -1,5 +1,7 @@
 # 🥩 Sistema de Gestión para Carnicería (MySQL + MongoDB)
 
+> **Para ver la página web no abras este archivo.** Ejecuta `npm start` (o haz doble clic en `abrir-carniceria.command`) y abre [http://localhost:3000](http://localhost:3000). Este `.md` es solo documentación.
+
 Sistema web integral full stack para carnicería con presencia multirregional, combinando **MySQL** (para catálogos estructurados y relacionales) y **MongoDB** (para ventas de alta concurrencia, lotes con rotación FIFO, mermas operativas e historial regional precalculado).
 
 ---
@@ -82,7 +84,7 @@ npm test
 
 ---
 
-## 🏛️ Reparto de Datos entre Bases de Datos
+## Reparto de Datos entre Bases de Datos
 
 | Base de Datos | Entidades / Colecciones | Propósito |
 |---|---|---|

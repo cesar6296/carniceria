@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS proveedores (
   contacto VARCHAR(120),
   telefono VARCHAR(20),
   activo BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_proveedores_activo (activo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS cortes (
   tipo_carne ENUM('res', 'cerdo', 'pollo', 'cordero', 'embutido') NOT NULL,
   precio_kg DECIMAL(10,2) NOT NULL CHECK (precio_kg > 0),
   activo BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_cortes_tipo (tipo_carne),
   INDEX idx_cortes_activo (activo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

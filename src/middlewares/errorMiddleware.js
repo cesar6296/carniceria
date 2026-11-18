@@ -15,7 +15,7 @@ function validarCampos(req, res, next) {
 
 // Middleware de manejo de errores centralizado
 function manejadorErrores(err, req, res, next) {
-  console.error('⚠️ Error capturado:', err.message);
+  console.error('Error capturado:', err.message);
 
   const status = err.statusCode || (err.name === 'ValidationError' ? 400 : 500);
   const respuesta = {
