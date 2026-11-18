@@ -3,12 +3,11 @@
 const API = {
   async peticion(url, opciones = {}) {
     try {
-      const token = localStorage.getItem('token_carniceria');
       const config = {
         ...opciones,
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(opciones.headers || {})
         }
       };
@@ -23,6 +22,9 @@ const API = {
       }
 
       if (!respuesta.ok) {
+        if (respuesta.status === 401 && !url.includes('/api/auth/login')) {
+          window.dispatchEvent(new Event('sesion-expirada'));
+        }
         throw new Error(datos.mensaje || 'Error en la solicitud');
       }
 

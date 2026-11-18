@@ -2,6 +2,7 @@
 
 let vistaActual = 'dashboard';
 let graficasInstanciadas = {};
+let intervaloSalud = null;
 
 function alternarSidebar() {
   const sidebar = document.getElementById('sidebar-menu');
@@ -28,10 +29,76 @@ window.addEventListener('popstate', (e) => {
 });
 
 async function iniciarApp() {
+  document.getElementById('form-login').addEventListener('submit', procesarLogin);
+  window.addEventListener('sesion-expirada', () => mostrarLogin('Tu sesión venció. Inicia sesión de nuevo.'));
+
+  try {
+    const respuesta = await fetch('/api/auth/perfil', { cache: 'no-store' });
+    if (!respuesta.ok) {
+      mostrarLogin();
+      return;
+    }
+    const perfil = await respuesta.json();
+    mostrarAplicacion(perfil.usuario);
+  } catch (error) {
+    mostrarLogin();
+  }
+}
+
+function mostrarLogin(mensaje = '') {
+  if (intervaloSalud) clearInterval(intervaloSalud);
+  intervaloSalud = null;
+  document.getElementById('app-privada').style.display = 'none';
+  document.getElementById('vista-login').style.display = 'flex';
+  document.getElementById('login-error').innerText = mensaje;
+}
+
+function mostrarAplicacion(usuario) {
+  document.getElementById('vista-login').style.display = 'none';
+  document.getElementById('app-privada').style.display = 'flex';
+  document.getElementById('usuario-nombre').innerText = usuario.nombre || usuario.usuario;
   verificarSalud();
-  setInterval(verificarSalud, 10000);
-  const vistaInicial = obtenerVistaDesdeRuta();
-  navegar(vistaInicial, false);
+  if (!intervaloSalud) intervaloSalud = setInterval(verificarSalud, 10000);
+  navegar(obtenerVistaDesdeRuta(), false);
+}
+
+async function procesarLogin(evento) {
+  evento.preventDefault();
+  const usuario = document.getElementById('login-usuario').value.trim();
+  const passwordInput = document.getElementById('login-password');
+  const boton = document.getElementById('login-submit');
+  const errorEl = document.getElementById('login-error');
+  errorEl.innerText = '';
+  boton.disabled = true;
+  boton.innerText = 'Verificando...';
+
+  try {
+    const respuesta = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, password: passwordInput.value })
+    });
+    const datos = await respuesta.json();
+    if (!respuesta.ok) throw new Error(datos.mensaje || 'No se pudo iniciar sesión.');
+    passwordInput.value = '';
+    mostrarAplicacion(datos.datos.usuario);
+  } catch (error) {
+    errorEl.innerText = error.message || 'No se pudo conectar con el servidor.';
+  } finally {
+    boton.disabled = false;
+    boton.innerText = 'Entrar al sistema';
+  }
+}
+
+async function cerrarSesion() {
+  try {
+    const respuesta = await fetch('/api/auth/logout', { method: 'POST' });
+    if (!respuesta.ok) throw new Error('No se pudo cerrar la sesión.');
+    mostrarLogin();
+    document.getElementById('login-password').value = '';
+  } catch (error) {
+    API.mostrarToast(error.message || 'No se pudo cerrar la sesión.', 'error');
+  }
 }
 
 async function verificarSalud() {
@@ -39,19 +106,14 @@ async function verificarSalud() {
     const res = await fetch('/api/salud').then(r => r.json());
     const badge = document.getElementById('estado-sistema');
     const texto = document.getElementById('texto-salud');
-    if (res.mysql === 'ok' && res.mongodb === 'ok') {
-      texto.innerText = 'MySQL & MongoDB Conectados • Monitoreando en tiempo real';
-      badge.querySelector('.punto-indicador').style.backgroundColor = '#38A169';
-    } else if (res.mongodb === 'ok') {
-      texto.innerText = 'MongoDB Activo (MySQL Local / Demo) • Monitoreando en tiempo real';
-      badge.querySelector('.punto-indicador').style.backgroundColor = '#38A169';
-    } else {
-      texto.innerText = `MySQL: ${res.mysql} | Mongo: ${res.mongodb} • Monitoreando en tiempo real`;
-      badge.querySelector('.punto-indicador').style.backgroundColor = '#DD6B20';
-    }
+    const mongoActivo = res.mongodb === 'ok';
+    texto.innerText = 'Monitoreando en tiempo real';
+    badge.classList.toggle('sin-conexion', !mongoActivo);
+    badge.title = `MongoDB: ${res.mongodb} · MySQL: ${res.mysql}`;
   } catch (e) {
-    document.getElementById('texto-salud').innerText = 'Servidor activo • Monitoreando en tiempo real';
-    document.querySelector('.punto-indicador').style.backgroundColor = '#38A169';
+    document.getElementById('texto-salud').innerText = 'Monitoreando en tiempo real';
+    document.getElementById('estado-sistema').classList.add('sin-conexion');
+    document.getElementById('estado-sistema').title = 'No se pudo consultar el estado de las bases de datos';
   }
 }
 

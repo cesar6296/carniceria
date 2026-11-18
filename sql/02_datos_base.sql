@@ -94,5 +94,3 @@ INSERT INTO clientes (id, nombre, tipo, telefono, correo, ciudad, region_id) VAL
 (29, 'Carnes y Embutidos de Occidente', 'mayorista', '333-121-2323', 'contacto@carnesoccidente.com', 'Guadalajara', 4),
 (30, 'Suministros Cárnicos del Sureste', 'mayorista', '999-232-3434', 'ventas@suministrossureste.com', 'Mérida', 6);
 
-INSERT INTO usuarios (id, nombre, usuario, password_hash, rol, activo) VALUES
-(1, 'Uzielito Remix', 'uzielitoremix', '$2b$10$HWIPODptIhzghEC1xI9szOAZ0FD/DRCWDuVDJTmmAs2loIwADxPmm', 'admin', TRUE);

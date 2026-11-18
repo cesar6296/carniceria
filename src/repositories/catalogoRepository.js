@@ -59,28 +59,10 @@ const DATOS_FALLBACK = {
     { id: 1, nombre: 'Ganadería del Norte S.A. de C.V.', contacto: 'Ing. Roberto Garza', telefono: '667-123-4567', creado_en: '2026-01-03T10:00:00Z', activo: 1 },
     { id: 2, nombre: 'Carnes Selectas de Sonora', contacto: 'Lic. Alejandro Elías', telefono: '662-987-6543', creado_en: '2026-01-04T12:00:00Z', activo: 1 },
     { id: 3, nombre: 'Porcícola del Bajío', contacto: 'Carlos Mendoza', telefono: '477-555-1212', creado_en: '2026-01-05T15:00:00Z', activo: 1 }
-  ],
-  usuarios: [
-    {
-      id: 1,
-      nombre: 'Uzielito Remix',
-      usuario: 'uzielitoremix',
-      password_hash: '$2b$10$HWIPODptIhzghEC1xI9szOAZ0FD/DRCWDuVDJTmmAs2loIwADxPmm',
-      rol: 'admin',
-      activo: 1
-    }
   ]
 };
 
 const CatalogoRepository = {
-  async buscarUsuario(usuario) {
-    try {
-      const [filas] = await pool.query('SELECT * FROM usuarios WHERE usuario = ? AND activo = TRUE', [usuario]);
-      return filas[0] || null;
-    } catch (e) {
-      return DATOS_FALLBACK.usuarios.find(u => u.usuario === usuario && u.activo) || null;
-    }
-  },
   // Regiones
   async listarRegiones() {
     try {

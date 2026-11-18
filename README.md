@@ -5,6 +5,7 @@
 Sistema web integral full stack para carnicería con presencia multirregional, combinando **MySQL** (para catálogos estructurados y relacionales) y **MongoDB** (para ventas de alta concurrencia, lotes con rotación FIFO, mermas operativas e historial regional precalculado).
 
 > La aplicación **no pide login**: al abrir la URL entra directo al dashboard. Todas las rutas de la API son de acceso abierto.
+La aplicación requiere iniciar sesión. Las rutas de datos de la API están protegidas; la contraseña se valida en el servidor con un hash bcrypt y nunca se incluye en el frontend.
 
 ---
 
@@ -42,6 +43,8 @@ NODE_ENV=development
 
 # Seguridad (opcional: la app abre sin login)
 JWT_SECRET=una_clave_larga_y_aleatoria
+ADMIN_USERNAME=uzielitoremix
+ADMIN_PASSWORD_HASH=
 
 # MySQL
 MYSQL_HOST=localhost
@@ -55,6 +58,12 @@ MYSQL_SSL=false
 MONGODB_URI=mongodb+srv://USUARIO:CONTRASEÑA@cluster0.xxxxx.mongodb.net/carniceria
 USAR_TRANSACCIONES=false
 ```
+
+Genera un hash para una contraseña nueva desde una terminal interactiva. El texto que escribas no se muestra:
+```bash
+npm run admin:hash
+```
+Copia la línea `ADMIN_PASSWORD_HASH=...` que imprime el comando a tu `.env` local y a las variables de Vercel. Usa una contraseña nueva de al menos 12 caracteres; no reutilices una contraseña que ya compartiste.
 
 ### 3. Crear Esquema y Datos Base en MySQL
 Ejecuta los scripts en orden:
@@ -111,14 +120,18 @@ En *Project Settings → Environment Variables* agrega:
 | Variable | Ejemplo |
 |---|---|
 | `MONGODB_URI` | `mongodb+srv://usuario:clave@cluster0.xxxxx.mongodb.net/carniceria` |
+| `ADMIN_USERNAME` | `uzielitoremix` |
+| `ADMIN_PASSWORD_HASH` | Hash generado con `npm run admin:hash` |
 | `MYSQL_HOST` | `tu-host.aivencloud.com` |
 | `MYSQL_PORT` | `12345` |
 | `MYSQL_USER` | `avnadmin` |
 | `MYSQL_PASSWORD` | `tu_clave` |
 | `MYSQL_DATABASE` | `carniceria` |
 | `MYSQL_SSL` | `true` (según tu proveedor) |
-| `JWT_SECRET` | opcional: la app ya no pide login |
+| `JWT_SECRET` | Secreto largo y aleatorio para firmar sesiones |
 | `NODE_ENV` | `production` |
+
+Configura `ADMIN_PASSWORD_HASH` en Production, Preview y Development según corresponda. En Vercel, guarda los cambios y vuelve a desplegar. La cookie de sesión es `HttpOnly`, `SameSite=Strict` y segura en producción; el endpoint `/api/salud` permanece público para diagnóstico.
 
 ### 3. Poblar MongoDB antes de desplegar
 El seed **no** se ejecuta en Vercel. Córrelo desde tu computadora apuntando a Atlas:
