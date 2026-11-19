@@ -85,6 +85,8 @@ npm run mongo:operaciones -- demo
 
 `demo` ejecuta las cuatro etapas en orden. Por defecto, la eliminación aleatoria usa `$sample` sobre `clientes`; puedes elegir otra colección con `--coleccion=ventas`, `--coleccion=mermas`, etc. La eliminación real usa `deleteOne()` y la indexación ejecuta `createIndexes()` en todas las colecciones del sistema.
 
+También puedes hacer estas operaciones desde la página web, entrando al menú **Operaciones MongoDB**. La pantalla pide confirmación antes de eliminar y no permite borrar usuarios, regiones ni sucursales para evitar dejar inutilizable el sistema.
+
 Para comprobar el flujo sin tocar datos:
 
 ```bash

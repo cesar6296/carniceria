@@ -13,7 +13,7 @@ function alternarSidebar() {
 
 function obtenerVistaDesdeRuta() {
   const ruta = window.location.pathname.replace(/^\//, '');
-  const rutasValidas = ['dashboard', 'ayuda', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes'];
+  const rutasValidas = ['dashboard', 'ayuda', 'operaciones-mongo', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes'];
   return rutasValidas.includes(ruta) ? ruta : 'dashboard';
 }
 
@@ -152,6 +152,10 @@ function navegar(vista, actualizarUrl = true) {
       titulo.innerText = 'Guía rápida del sistema';
       renderizarAyuda(contenedor);
       break;
+    case 'operaciones-mongo':
+      titulo.innerText = 'Operaciones de MongoDB';
+      renderizarOperacionesMongo(contenedor);
+      break;
     case 'nueva-venta':
       titulo.innerText = 'Registrar Nueva Venta';
       renderizarNuevaVenta(contenedor);
@@ -250,6 +254,87 @@ function renderizarAyuda(c) {
 
     <div class="ayuda-nota"><strong>Sobre los datos:</strong> cada registro se guarda en MongoDB. La etiqueta de estado en la parte superior indica si la conexión está disponible.</div>
   `;
+}
+
+function renderizarOperacionesMongo(c) {
+  c.innerHTML = `
+    <div class="ayuda-inline"><strong>Pantalla de evaluación:</strong> aquí puedes revisar cuántos documentos hay, eliminar un documento aleatorio y crear los índices de MongoDB.</div>
+    <div class="mongo-aviso"><strong>Importante:</strong> eliminar es una operación real. Usa una base de demostración o confirma con tu equipo antes de borrar datos importantes.</div>
+    <div class="mongo-operaciones-grid">
+      <section class="tarjeta-guia">
+        <div class="guia-icono">🗑️</div>
+        <h4>Eliminar un documento al azar</h4>
+        <p>MongoDB elige un documento con <code>$sample</code> y lo elimina con <code>deleteOne()</code>.</p>
+        <select id="mongo-coleccion-borrar" class="form-control">
+          <option value="clientes">Clientes</option>
+          <option value="proveedores">Proveedores</option>
+          <option value="cortes">Cortes</option>
+          <option value="ventas">Ventas</option>
+          <option value="inventario_lotes">Lotes de inventario</option>
+          <option value="mermas">Mermas</option>
+          <option value="historial_regional">Historial regional</option>
+          <option value="lecturas_refrigeracion">Lecturas de refrigeración</option>
+        </select>
+        <button class="btn btn-peligro mongo-operacion-btn" onclick="eliminarAleatorioDesdeWeb()">Eliminar documento aleatorio</button>
+      </section>
+      <section class="tarjeta-guia">
+        <div class="guia-icono">⚙️</div>
+        <h4>Crear índices</h4>
+        <p>Construye y verifica los índices definidos en los modelos de MongoDB para acelerar consultas.</p>
+        <button class="btn btn-primario mongo-operacion-btn" onclick="crearIndicesDesdeWeb()">Crear y verificar índices</button>
+      </section>
+    </div>
+    <section class="tarjeta-guia">
+      <h3>Documentos por colección</h3>
+      <p class="texto-ayuda">Este conteo consulta MongoDB en tiempo real.</p>
+      <div class="tabla-scroll">
+        <table>
+          <thead><tr><th>Colección</th><th>Documentos</th></tr></thead>
+          <tbody id="mongo-resumen-cuerpo"><tr><td colspan="2">Consultando MongoDB...</td></tr></tbody>
+        </table>
+      </div>
+      <button class="btn btn-secundario" onclick="cargarResumenMongo()">Actualizar conteos</button>
+    </section>
+  `;
+  cargarResumenMongo();
+}
+
+async function cargarResumenMongo() {
+  const tbody = document.getElementById('mongo-resumen-cuerpo');
+  if (!tbody) return;
+  try {
+    const res = await API.get('/api/mongo/resumen');
+    tbody.innerHTML = Object.entries(res.datos).map(([coleccion, total]) => `
+      <tr><td><strong>${coleccion}</strong></td><td>${total}</td></tr>
+    `).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="2">No se pudo consultar MongoDB.</td></tr>';
+  }
+}
+
+async function eliminarAleatorioDesdeWeb() {
+  const select = document.getElementById('mongo-coleccion-borrar');
+  if (!select) return;
+  const coleccion = select.value;
+  const confirmado = confirm(`¿Eliminar un documento aleatorio de "${coleccion}"? Esta acción no se puede deshacer.`);
+  if (!confirmado) return;
+
+  try {
+    const res = await API.post('/api/mongo/eliminar-aleatorio', { coleccion });
+    API.mostrarToast(`${res.mensaje}: ${res.datos.descripcion}`, 'exito');
+    cargarResumenMongo();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function crearIndicesDesdeWeb() {
+  try {
+    const res = await API.post('/api/mongo/indices', {});
+    API.mostrarToast(res.mensaje, 'exito');
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 // 1. Dashboard

@@ -76,4 +76,44 @@ describe('Pruebas de Integración - API Carnicería', () => {
       .send({ lote_id: 'invalido', kg: -5, motivo: 'motivo_inexistente' });
     expect(res.status).toBe(401);
   });
+
+  it('permite consultar colecciones, eliminar aleatoriamente e indexar con sesión', async () => {
+    const hashAnterior = process.env.ADMIN_PASSWORD_HASH;
+    const usuarioAnterior = process.env.ADMIN_USERNAME;
+    process.env.ADMIN_USERNAME = 'uzielitoremix';
+    process.env.ADMIN_PASSWORD_HASH = await bcrypt.hash('clave-prueba-segura', 4);
+
+    try {
+      await UsuarioRepository.asegurarAdministrador();
+      const login = await request(app)
+        .post('/api/auth/login')
+        .send({ usuario: 'uzielitoremix', password: 'clave-prueba-segura' });
+      const cookie = login.headers['set-cookie'].find(value => value.startsWith('carniceria_session='));
+
+      const resumen = await request(app)
+        .get('/api/mongo/resumen')
+        .set('Cookie', cookie.split(';')[0]);
+      expect(resumen.status).toBe(200);
+      expect(resumen.body.datos).toHaveProperty('clientes');
+
+      const eliminado = await request(app)
+        .post('/api/mongo/eliminar-aleatorio')
+        .set('Cookie', cookie.split(';')[0])
+        .send({ coleccion: 'clientes' });
+      expect(eliminado.status).toBe(200);
+      expect(eliminado.body.datos.coleccion).toBe('clientes');
+
+      const indices = await request(app)
+        .post('/api/mongo/indices')
+        .set('Cookie', cookie.split(';')[0])
+        .send({});
+      expect(indices.status).toBe(200);
+      expect(indices.body.datos).toHaveProperty('ventas');
+    } finally {
+      if (hashAnterior === undefined) delete process.env.ADMIN_PASSWORD_HASH;
+      else process.env.ADMIN_PASSWORD_HASH = hashAnterior;
+      if (usuarioAnterior === undefined) delete process.env.ADMIN_USERNAME;
+      else process.env.ADMIN_USERNAME = usuarioAnterior;
+    }
+  });
 });

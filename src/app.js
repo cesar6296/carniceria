@@ -15,6 +15,7 @@ const inventarioRoutes = require('./routes/inventarioRoutes');
 const mermasRoutes = require('./routes/mermasRoutes');
 const ventasRoutes = require('./routes/ventasRoutes');
 const reportesRoutes = require('./routes/reportesRoutes');
+const mongoRoutes = require('./routes/mongoRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { verificarToken } = require('./middlewares/authMiddleware');
 
@@ -44,6 +45,7 @@ const limitadorLogin = rateLimit({
 app.use('/api/ventas', limitadorEscritura);
 app.use('/api/mermas', limitadorEscritura);
 app.use('/api/inventario/lotes', limitadorEscritura);
+app.use('/api/mongo', limitadorEscritura);
 app.use('/api/auth/login', limitadorLogin);
 
 // Los recursos estáticos sirven la interfaz; los datos de la API se protegen más abajo.
@@ -84,6 +86,7 @@ app.use('/api/inventario', inventarioRoutes);
 app.use('/api/mermas', mermasRoutes);
 app.use('/api/ventas', ventasRoutes);
 app.use('/api/reportes', reportesRoutes);
+app.use('/api/mongo', mongoRoutes);
 
 app.use(manejadorErrores);
 
