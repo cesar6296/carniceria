@@ -621,7 +621,17 @@ async function renderizarInventario(c) {
     const sucursales = await API.get('/api/sucursales');
     const sel = document.getElementById('sel-inv-sucursal');
     if (!sel) return;
-    sel.innerHTML = sucursales.datos.map(s => `<option value="${s.id}">${s.nombre} (${s.region_nombre})</option>`).join('');
+    const listaSucursales = Array.isArray(sucursales.datos) ? sucursales.datos : [];
+    if (!listaSucursales.length) {
+      sel.innerHTML = '<option value="">No hay sucursales cargadas</option>';
+      const tabla = document.getElementById('tabla-inv-cuerpo');
+      if (tabla) {
+        tabla.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay sucursales en MongoDB. Carga los catálogos antes de consultar el inventario.</td></tr>';
+      }
+      return;
+    }
+    sel.innerHTML = listaSucursales.map(s => `<option value="${s.id}">${s.nombre} (${s.region_nombre})</option>`).join('');
+    sel.value = String(listaSucursales[0].id);
     cargarInventarioSucursal();
   } catch (e) {
     console.error(e);
@@ -632,6 +642,13 @@ async function cargarInventarioSucursal() {
   const selectSucursal = document.getElementById('sel-inv-sucursal');
   if (!selectSucursal) return;
   const sucursalId = selectSucursal.value;
+  if (!sucursalId) {
+    const tabla = document.getElementById('tabla-inv-cuerpo');
+    if (tabla) {
+      tabla.innerHTML = '<tr><td colspan="4" style="text-align:center;">Selecciona una sucursal para consultar el inventario.</td></tr>';
+    }
+    return;
+  }
   try {
     const res = await API.get(`/api/inventario?sucursal_id=${sucursalId}`);
     const tbody = document.getElementById('tabla-inv-cuerpo');
@@ -1138,8 +1155,11 @@ function abrirModalMerma() {
   API.get('/api/sucursales').then(s => {
     const sel = document.getElementById('m-merma-sucursal');
     if (!sel) return;
-    sel.innerHTML = s.datos.map(suc => `<option value="${suc.id}">${suc.nombre}</option>`).join('');
-    cargarLotesParaMerma();
+    const listaSucursales = Array.isArray(s.datos) ? s.datos : [];
+    sel.innerHTML = listaSucursales.length
+      ? listaSucursales.map(suc => `<option value="${suc.id}">${suc.nombre}</option>`).join('')
+      : '<option value="">No hay sucursales cargadas</option>';
+    if (listaSucursales.length) cargarLotesParaMerma();
   });
 
   document.getElementById('modal-global').classList.add('abierto');
@@ -1149,6 +1169,11 @@ async function cargarLotesParaMerma() {
   const selectSucursal = document.getElementById('m-merma-sucursal');
   if (!selectSucursal) return;
   const sucursalId = selectSucursal.value;
+  if (!sucursalId) {
+    const selLotes = document.getElementById('m-merma-lote');
+    if (selLotes) selLotes.innerHTML = '<option value="">Primero carga una sucursal</option>';
+    return;
+  }
   try {
     const res = await API.get(`/api/inventario?sucursal_id=${sucursalId}`);
     const selLotes = document.getElementById('m-merma-lote');
@@ -1216,11 +1241,25 @@ function abrirModalCliente() {
       <label style="font-size: 0.85rem; font-weight: 600;">Ciudad:</label>
       <input type="text" id="m-cli-ciudad" class="form-control" placeholder="Ej. Culiacán">
     </div>
+    <div style="margin-bottom: 20px;">
+      <label style="font-size: 0.85rem; font-weight: 600;">Región:</label>
+      <select id="m-cli-region" class="form-control">
+        <option value="">Sin región por ahora</option>
+      </select>
+      <small style="display: block; margin-top: 5px; color: var(--color-texto-mutado);">Puedes dejarla sin región si todavía no has cargado los catálogos.</small>
+    </div>
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
       <button class="btn btn-secundario" onclick="cerrarModal()">Cancelar</button>
       <button class="btn btn-primario" onclick="guardarCliente()">Guardar Cliente</button>
     </div>
   `;
+  API.get('/api/regiones').then(res => {
+    const selectRegion = document.getElementById('m-cli-region');
+    if (!selectRegion) return;
+    const regiones = Array.isArray(res.datos) ? res.datos : [];
+    selectRegion.innerHTML = '<option value="">Sin región por ahora</option>'
+      + regiones.map(region => `<option value="${region.id}">${region.nombre}</option>`).join('');
+  }).catch(() => {});
   document.getElementById('modal-global').classList.add('abierto');
 }
 
@@ -1230,6 +1269,8 @@ async function guardarCliente() {
   const telefono = document.getElementById('m-cli-telefono').value.trim();
   const correo = document.getElementById('m-cli-correo').value.trim();
   const ciudad = document.getElementById('m-cli-ciudad').value.trim();
+  const regionSeleccionada = document.getElementById('m-cli-region').value;
+  const region_id = regionSeleccionada ? parseInt(regionSeleccionada, 10) : undefined;
 
   if (!nombre) {
     API.mostrarToast('El nombre del cliente es obligatorio', 'error');
@@ -1237,7 +1278,7 @@ async function guardarCliente() {
   }
 
   try {
-    await API.post('/api/clientes', { nombre, tipo, telefono, correo, ciudad, region_id: 1 });
+    await API.post('/api/clientes', { nombre, tipo, telefono, correo, ciudad, region_id });
     API.mostrarToast('Cliente guardado exitosamente', 'exito');
     cerrarModal();
     renderizarClientes(document.getElementById('contenido-vista'));

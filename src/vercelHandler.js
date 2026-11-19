@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 const app = require('./app');
 const { conectarMongoDB, obtenerUltimoErrorMongo } = require('./config/mongo');
+const CatalogoRepository = require('./repositories/catalogoRepository');
 const { ocultarCredenciales, pistaParaError, apuntaALocalhost } = require('./utils/mongoDiagnostico');
 
 let intentoMongo = null;
 let errorReportado = false;
+let catalogosListos = false;
+let intentoCatalogos = null;
 
 async function asegurarMongo() {
   if (mongoose.connection.readyState === 1) return true;
@@ -30,6 +33,20 @@ async function asegurarMongo() {
   return mongoose.connection.readyState === 1;
 }
 
+async function asegurarCatalogos() {
+  if (catalogosListos) return;
+  if (!intentoCatalogos) {
+    intentoCatalogos = CatalogoRepository.sembrarCatalogos()
+      .then(() => {
+        catalogosListos = true;
+      })
+      .finally(() => {
+        intentoCatalogos = null;
+      });
+  }
+  await intentoCatalogos;
+}
+
 // Quita usuario y contraseña de cualquier URI que aparezca en un mensaje de error.
 // Adaptador para Vercel Functions. Mantiene una sola conexión por instancia cálida.
 module.exports = async function handler(req, res) {
@@ -37,6 +54,14 @@ module.exports = async function handler(req, res) {
 
   if (esApi) {
     const mongoListo = await asegurarMongo();
+
+    if (mongoListo) {
+      try {
+        await asegurarCatalogos();
+      } catch (error) {
+        console.error('No se pudieron preparar los catálogos MongoDB:', error.message);
+      }
+    }
 
     // /api/salud siempre responde para poder diagnosticar el despliegue.
     if (!mongoListo && !req.url.startsWith('/api/salud')) {

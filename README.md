@@ -45,6 +45,14 @@ Este comando crea los catálogos y regenera las colecciones operativas de MongoD
 npm run seed
 ```
 
+Si la base ya tiene ventas o inventario y solo faltan los catálogos, usa este comando seguro:
+
+```bash
+MONGODB_URI="tu_uri_de_atlas" npm run seed:catalogos
+```
+
+Este comando no elimina datos operativos.
+
 También se pueden generar ventas deterministas de 2026:
 
 ```bash
@@ -96,6 +104,6 @@ Configura en Vercel:
 | `ADMIN_PASSWORD_HASH` | Hash bcrypt de la contraseña |
 | `NODE_ENV` | `production` |
 
-El seed se ejecuta desde una computadora con acceso a Atlas; no se ejecuta automáticamente en Vercel.
+El seed de ventas, lotes y mermas se ejecuta desde una computadora con acceso a Atlas; no se ejecuta automáticamente en Vercel. Los catálogos base se preparan automáticamente al recibir la primera petición de la función.
 
 La carpeta `sql/` se conserva como material histórico de la versión anterior, pero la aplicación actual no importa MySQL ni ejecuta esos archivos.

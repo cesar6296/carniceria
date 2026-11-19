@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node scripts/seed_mongo.js",
+    "seed:catalogos": "node scripts/seed_catalogos.js",
     "seed:ventas-2026": "node scripts/seed_ventas_2026.js",
     "mongo:operaciones": "node scripts/operaciones_mongo.js",
     "admin:hash": "node scripts/generar_hash_admin.js",
