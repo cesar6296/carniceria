@@ -17,7 +17,9 @@ function validarCampos(req, res, next) {
 function manejadorErrores(err, req, res, next) {
   console.error('Error capturado:', err.message);
 
-  const status = err.statusCode || (err.name === 'ValidationError' ? 400 : 500);
+  const status = err.statusCode
+    || (err.code === 11000 ? 409 : null)
+    || (err.name === 'ValidationError' ? 400 : 500);
   const respuesta = {
     ok: false,
     mensaje: err.message || 'Ocurrió un error interno en el servidor'

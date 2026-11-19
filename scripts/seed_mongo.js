@@ -2,6 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const { conectarMongoDB } = require('../src/config/mongo');
 const CatalogoRepository = require('../src/repositories/catalogoRepository');
+const UsuarioRepository = require('../src/repositories/usuarioRepository');
 
 const Venta = require('../src/models/Venta');
 const InventarioLote = require('../src/models/InventarioLote');
@@ -30,6 +31,10 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
   if (mongoose.connection.readyState !== 1) {
     await conectarMongoDB();
   }
+
+  await CatalogoRepository.sembrarCatalogos();
+  await UsuarioRepository.asegurarAdministrador();
+  console.log('Catálogos MongoDB listos.');
 
   console.log('Limpiando colecciones anteriores...');
   await Venta.deleteMany({});

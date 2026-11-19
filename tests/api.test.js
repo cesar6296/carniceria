@@ -1,13 +1,26 @@
 const request = require('supertest');
 const bcrypt = require('bcryptjs');
 const app = require('../src/app');
+const { conectarMongoDB, desconectarMongoDB } = require('../src/config/mongo');
+const CatalogoRepository = require('../src/repositories/catalogoRepository');
+const UsuarioRepository = require('../src/repositories/usuarioRepository');
 
 describe('Pruebas de Integración - API Carnicería', () => {
+  beforeAll(async () => {
+    delete process.env.MONGODB_URI;
+    process.env.NODE_ENV = 'test';
+    await conectarMongoDB();
+    await CatalogoRepository.sembrarCatalogos();
+  });
+
+  afterAll(async () => {
+    await desconectarMongoDB();
+  });
+
   it('GET /api/salud debe responder con estado del servidor', async () => {
     const res = await request(app).get('/api/salud');
     expect(res.status).toBeDefined();
     expect(res.body).toHaveProperty('estado');
-    expect(res.body).toHaveProperty('mysql');
     expect(res.body).toHaveProperty('mongodb');
   });
 
@@ -16,6 +29,7 @@ describe('Pruebas de Integración - API Carnicería', () => {
     const usuarioAnterior = process.env.ADMIN_USERNAME;
     process.env.ADMIN_USERNAME = 'uzielitoremix';
     process.env.ADMIN_PASSWORD_HASH = await bcrypt.hash('clave-prueba-segura', 4);
+    await UsuarioRepository.asegurarAdministrador();
 
     try {
       const login = await request(app)

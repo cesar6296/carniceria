@@ -1,178 +1,101 @@
-# 🥩 Sistema de Gestión para Carnicería (MySQL + MongoDB)
+# 🥩 Sistema de Gestión para Carnicería — MongoDB
 
-> **Para ver la página web no abras este archivo.** Ejecuta `npm start` (o haz doble clic en `abrir-carniceria.command`) y abre [http://localhost:3000](http://localhost:3000). Este `.md` es solo documentación.
+Sistema web full stack para una carnicería multirregional. Toda la información operativa y de catálogo se guarda en MongoDB; no se necesita MySQL.
 
-Sistema web integral full stack para carnicería con presencia multirregional, combinando **MySQL** (para catálogos estructurados y relacionales) y **MongoDB** (para ventas de alta concurrencia, lotes con rotación FIFO, mermas operativas e historial regional precalculado).
+La aplicación incluye autenticación con cookie `HttpOnly`, ventas, inventario por lotes FIFO, mermas, consultas analíticas y una interfaz web para revisar los datos.
 
-> La aplicación **no pide login**: al abrir la URL entra directo al dashboard. Todas las rutas de la API son de acceso abierto.
-La aplicación requiere iniciar sesión. Las rutas de datos de la API están protegidas; la contraseña se valida en el servidor con un hash bcrypt y nunca se incluye en el frontend.
+## Colecciones
 
----
+Catálogos:
 
-## Requisitos del Sistema
+- `regiones`
+- `sucursales`
+- `clientes`
+- `proveedores`
+- `cortes`
+- `usuarios`
 
-- **Node.js LTS** (v20 o superior) con **npm** (probado con Node v22.x).
-- **MySQL Server 8** (local, XAMPP o Docker).
-- **MongoDB** (MongoDB Atlas clúster gratuito M0 recomendado, o MongoDB Community local).
+Operación y análisis:
 
----
+- `ventas`
+- `inventario_lotes`
+- `mermas`
+- `historial_regional`
+- `lecturas_refrigeracion`
 
-## Instalación y Puesta en Marcha
+Los modelos de Mongoose crean índices únicos para los IDs de catálogo y los índices de consulta para fechas, sucursal, región, tipo de carne y estatus.
 
-### 1. Clonar e Instalar Dependencias
+## Instalación
+
+Requisitos: Node.js 20 o superior y una instancia de MongoDB local o MongoDB Atlas.
+
 ```bash
-# Dentro de la carpeta del proyecto:
 npm install
-```
-
-### 2. Configurar Variables de Entorno (`.env`)
-Copia el archivo de ejemplo y ajusta tus credenciales:
-```bash
-# Mac / Linux
 cp .env.example .env
-
-# Windows
-copy .env.example .env
-```
-
-Contenido del archivo `.env`:
-```env
-# Servidor
-PORT=3000
-NODE_ENV=development
-
-# Seguridad (opcional: la app abre sin login)
-JWT_SECRET=una_clave_larga_y_aleatoria
-ADMIN_USERNAME=uzielitoremix
-ADMIN_PASSWORD_HASH=
-
-# MySQL
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=tu_contraseña
-MYSQL_DATABASE=carniceria
-MYSQL_SSL=false
-
-# MongoDB (Ejemplo MongoDB Atlas)
-MONGODB_URI=mongodb+srv://USUARIO:CONTRASEÑA@cluster0.xxxxx.mongodb.net/carniceria
-USAR_TRANSACCIONES=false
-```
-
-Genera un hash para una contraseña nueva desde una terminal interactiva. El texto que escribas no se muestra:
-```bash
 npm run admin:hash
 ```
-Copia la línea `ADMIN_PASSWORD_HASH=...` que imprime el comando a tu `.env` local y a las variables de Vercel. Usa una contraseña nueva de al menos 12 caracteres; no reutilices una contraseña que ya compartiste.
 
-### 3. Crear Esquema y Datos Base en MySQL
-Ejecuta los scripts en orden:
-```bash
-mysql -u root -p < sql/01_esquema.sql
-mysql -u root -p carniceria < sql/02_datos_base.sql
-```
-*(También puedes abrir ambos archivos `.sql` y ejecutarlos directamente en MySQL Workbench o DBeaver).*
+Guarda el hash generado en `ADMIN_PASSWORD_HASH` y configura `MONGODB_URI` en `.env`. Al iniciar o hacer seed se crea el administrador inicial en `usuarios`.
 
-### 4. Poblar MongoDB con el Historial y Lotes (Seed)
-El script de seed es idempotente, carga más de 1,600 ventas históricas, lotes, mermas e historial regional:
+## Cargar datos de demostración
+
+Este comando crea los catálogos y regenera las colecciones operativas de MongoDB con datos ficticios:
+
 ```bash
 npm run seed
 ```
 
-### 5. Iniciar la Aplicación
-```bash
-# Modo desarrollo con recarga automática:
-npm run dev
+También se pueden generar ventas deterministas de 2026:
 
-# Modo producción:
+```bash
+npm run seed:ventas-2026 -- --dry-run
+npm run seed:ventas-2026
+```
+
+El `dry-run` solo muestra cuántos documentos se prepararían y no escribe en MongoDB.
+
+## Ejecutar la aplicación
+
+```bash
 npm start
 ```
 
-Abrir en el navegador:
-- **Panel Web:** [http://localhost:3000](http://localhost:3000)
-- **Verificación de Salud:** [http://localhost:3000/api/salud](http://localhost:3000/api/salud)
+Abre [http://localhost:3000](http://localhost:3000). La API de salud está en [http://localhost:3000/api/salud](http://localhost:3000/api/salud).
 
-### 6. Ejecutar Pruebas
+## Operaciones para la evaluación de MongoDB
+
+El siguiente comando demuestra inserción, consultas, eliminación aleatoria e indexación:
+
+```bash
+npm run mongo:operaciones -- insertar
+npm run mongo:operaciones -- consultar
+npm run mongo:operaciones -- eliminar
+npm run mongo:operaciones -- indices
+npm run mongo:operaciones -- demo
+```
+
+`demo` ejecuta las cuatro etapas en orden. La eliminación aleatoria usa `$sample` sobre `ventas` y la indexación ejecuta `createIndexes()` en todas las colecciones del sistema.
+
+## Pruebas
+
 ```bash
 npm test
 ```
 
----
+Las pruebas levantan una base MongoDB temporal para comprobar login, protección de rutas y lectura de catálogos.
 
 ## Despliegue en Vercel
 
-El proyecto ya incluye `vercel.json`, la función serverless en `api/` y el adaptador `src/vercelHandler.js`. Vercel sirve `public/` como sitio estático desde su CDN y ejecuta Express en `/api/*`.
+Configura en Vercel:
 
-Cómo queda el enrutamiento (definido en `vercel.json`):
-- `framework: null` desactiva la autodetección para que no choque con la configuración manual.
-- `outputDirectory: public` publica `index.html`, `css/` y `js/`, sin exponer `src/`, `sql/` ni `.env`.
-- `/api/*` se manda a la función `api/index.js` (Express completo).
-- Cualquier otra ruta (`/dashboard`, `/inventario`, etc.) devuelve `index.html`, así que recargar la página en cualquier vista funciona.
-
-### 1. Bases de datos remotas
-Vercel no tiene acceso a `localhost`, así que necesitas:
-- **MongoDB Atlas** (plan gratuito M0). En *Network Access* agrega `0.0.0.0/0`.
-- **MySQL remoto**: Aiven, PlanetScale, Railway, Clever Cloud, etc. Ejecuta `sql/01_esquema.sql` y `sql/02_datos_base.sql` en ese servidor. Si la base ya existía, ejecuta también `sql/03_migracion_creado_en.sql`.
-
-### 2. Variables de entorno en Vercel
-En *Project Settings → Environment Variables* agrega:
-
-| Variable | Ejemplo |
+| Variable | Uso |
 |---|---|
-| `MONGODB_URI` | `mongodb+srv://usuario:clave@cluster0.xxxxx.mongodb.net/carniceria` |
-| `ADMIN_USERNAME` | `uzielitoremix` |
-| `ADMIN_PASSWORD_HASH` | Hash generado con `npm run admin:hash` |
-| `MYSQL_HOST` | `tu-host.aivencloud.com` |
-| `MYSQL_PORT` | `12345` |
-| `MYSQL_USER` | `avnadmin` |
-| `MYSQL_PASSWORD` | `tu_clave` |
-| `MYSQL_DATABASE` | `carniceria` |
-| `MYSQL_SSL` | `true` (según tu proveedor) |
-| `JWT_SECRET` | Secreto largo y aleatorio para firmar sesiones |
+| `MONGODB_URI` | URI de MongoDB Atlas |
+| `JWT_SECRET` | Secreto largo para las sesiones |
+| `ADMIN_USERNAME` | Usuario administrador |
+| `ADMIN_PASSWORD_HASH` | Hash bcrypt de la contraseña |
 | `NODE_ENV` | `production` |
 
-Configura `ADMIN_PASSWORD_HASH` en Production, Preview y Development según corresponda. En Vercel, guarda los cambios y vuelve a desplegar. La cookie de sesión es `HttpOnly`, `SameSite=Strict` y segura en producción; el endpoint `/api/salud` permanece público para diagnóstico.
+El seed se ejecuta desde una computadora con acceso a Atlas; no se ejecuta automáticamente en Vercel.
 
-### 3. Poblar MongoDB antes de desplegar
-El seed **no** se ejecuta en Vercel. Córrelo desde tu computadora apuntando a Atlas:
-```bash
-MONGODB_URI="mongodb+srv://usuario:clave@cluster0.xxxxx.mongodb.net/carniceria" npm run seed
-```
-
-### 4. Desplegar
-```bash
-npx vercel
-```
-O conecta el repositorio desde el panel de Vercel. No hace falta comando de build.
-
-### 5. Verificar
-- `https://tu-proyecto.vercel.app/api/salud` debe responder `ok`.
-- Si `mongodb` o `mysql` salen en error, revisa las variables de entorno y la lista de IP permitidas.
-- Si ves `codigo: "MONGODB_NO_DISPONIBLE"`, la `MONGODB_URI` falta o Atlas bloquea la IP.
-
-> **Importante:** en Vercel no se usa `mongodb-memory-server` (solo existe como dependencia de desarrollo). Sin `MONGODB_URI` válida la app responde 503 en las rutas privadas. Sin MySQL remoto la app entra en modo demostración con los catálogos en memoria y los cambios no se guardan entre peticiones.
-
----
-
-## Reparto de Datos entre Bases de Datos
-
-| Base de Datos | Entidades / Colecciones | Propósito |
-|---|---|---|
-| **MySQL** | `regiones`, `sucursales`, `clientes`, `proveedores`, `cortes` | Datos altamente estructurados, normalizados y con relaciones fijas. |
-| **MongoDB** | `ventas`, `inventario_lotes`, `mermas`, `historial_regional`, `lecturas_refrigeracion` | Documentos flexibles, inventario FIFO dinámico, agregaciones analíticas de alto volumen. |
-
----
-
-## Problemas Comunes y Soluciones
-
-| Problema | Causa | Solución |
-|---|---|---|
-| `ER_ACCESS_DENIED_ERROR` | Credenciales de MySQL incorrectas | Revisa `MYSQL_USER` y `MYSQL_PASSWORD` en `.env` |
-| `ECONNREFUSED 127.0.0.1:3306` | Servicio de MySQL apagado | Inicia MySQL desde tus servicios del sistema o XAMPP |
-| `MongoServerSelectionError` | MongoDB Atlas bloquea la IP | En Atlas ve a *Network Access* y agrega `0.0.0.0/0` |
-| `codigo: "MONGODB_NO_DISPONIBLE"` en Vercel | Falta `MONGODB_URI`, quedó en `localhost` o Atlas bloquea la IP | Agrega `MONGODB_URI` en *Production*, **vuelve a desplegar** y abre `/api/salud` para ver el detalle exacto |
-| Cambié variables y no surten efecto | Vercel no actualiza despliegues existentes | *Deployments* → menú `...` → **Redeploy** |
-| `MongoServerError: bad auth` | Contraseña de Atlas incorrecta o con símbolos sin codificar | Recuerda que `@` = `%40`, `:` = `%3A`, `/` = `%2F`, `#` = `%23` |
-| `No se pudo conectar a MongoDB` en Vercel | `MONGODB_URI` vacía o IP bloqueada | Configura Atlas y permite `0.0.0.0/0`; en Vercel no existe MongoDB en memoria |
-| `Puerto 3000 en uso` | Conflicto de puertos | Cambia `PORT=3001` en `.env` |
-
+La carpeta `sql/` se conserva como material histórico de la versión anterior, pero la aplicación actual no importa MySQL ni ejecuta esos archivos.

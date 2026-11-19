@@ -4,6 +4,7 @@ const CatalogoRepository = require('../repositories/catalogoRepository');
 const { validarCampos } = require('../middlewares/errorMiddleware');
 
 const router = express.Router();
+const esDuplicado = error => error.code === 11000 || error.code === 'ER_DUP_ENTRY';
 
 // Regiones (solo lectura)
 router.get('/regiones', async (req, res, next) => {
@@ -104,7 +105,7 @@ router.post(
       const nuevo = await CatalogoRepository.crearCliente(req.body);
       res.status(201).json({ ok: true, mensaje: 'Cliente registrado con éxito', datos: nuevo });
     } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY') {
+      if (esDuplicado(error)) {
         return res.status(409).json({ ok: false, mensaje: 'El correo electrónico ya está registrado' });
       }
       next(error);
@@ -208,7 +209,7 @@ router.post(
       const nuevo = await CatalogoRepository.crearCorte(req.body);
       res.status(201).json({ ok: true, mensaje: 'Corte registrado con éxito', datos: nuevo });
     } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY') {
+      if (esDuplicado(error)) {
         return res.status(409).json({ ok: false, mensaje: 'Ya existe un corte con ese nombre' });
       }
       next(error);

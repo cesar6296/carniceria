@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 
-const { probarConexionMySQL } = require('./config/mysql');
 const { probarConexionMongo } = require('./config/mongo');
 const { ocultarCredenciales, pistaParaError, apuntaALocalhost } = require('./utils/mongoDiagnostico');
 const { manejadorErrores } = require('./middlewares/errorMiddleware');
@@ -51,9 +50,8 @@ app.use('/api/auth/login', limitadorLogin);
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/salud', async (req, res) => {
-  const mysqlStatus = await probarConexionMySQL();
   const mongoStatus = probarConexionMongo();
-  const todoOk = mysqlStatus.estado === 'ok' && mongoStatus.estado === 'ok';
+  const todoOk = mongoStatus.estado === 'ok';
 
   const detalleMongo = ocultarCredenciales(mongoStatus.mensaje);
   const diagnosticoMongo = mongoStatus.estado === 'ok'
@@ -63,10 +61,8 @@ app.get('/api/salud', async (req, res) => {
   res.status(200).json({
     ok: true,
     estado: todoOk ? 'ok' : 'modo_demostracion',
-    mysql: mysqlStatus.estado,
     mongodb: mongoStatus.estado,
     detalles: {
-      mysql: mysqlStatus,
       mongodb: {
         ...mongoStatus,
         ...(detalleMongo ? { mensaje: detalleMongo } : {}),

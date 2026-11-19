@@ -13,7 +13,7 @@ function alternarSidebar() {
 
 function obtenerVistaDesdeRuta() {
   const ruta = window.location.pathname.replace(/^\//, '');
-  const rutasValidas = ['dashboard', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes'];
+  const rutasValidas = ['dashboard', 'ayuda', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes'];
   return rutasValidas.includes(ruta) ? ruta : 'dashboard';
 }
 
@@ -107,11 +107,11 @@ async function verificarSalud() {
     const badge = document.getElementById('estado-sistema');
     const texto = document.getElementById('texto-salud');
     const mongoActivo = res.mongodb === 'ok';
-    texto.innerText = 'Monitoreando en tiempo real';
+    texto.innerText = mongoActivo ? 'MongoDB conectado' : 'MongoDB sin conexión';
     badge.classList.toggle('sin-conexion', !mongoActivo);
-    badge.title = `MongoDB: ${res.mongodb} · MySQL: ${res.mysql}`;
+    badge.title = `MongoDB: ${res.mongodb}`;
   } catch (e) {
-    document.getElementById('texto-salud').innerText = 'Monitoreando en tiempo real';
+    document.getElementById('texto-salud').innerText = 'MongoDB sin conexión';
     document.getElementById('estado-sistema').classList.add('sin-conexion');
     document.getElementById('estado-sistema').title = 'No se pudo consultar el estado de las bases de datos';
   }
@@ -148,6 +148,10 @@ function navegar(vista, actualizarUrl = true) {
       titulo.innerText = 'Dashboard y Resumen Ejecutivo';
       renderizarDashboard(contenedor);
       break;
+    case 'ayuda':
+      titulo.innerText = 'Guía rápida del sistema';
+      renderizarAyuda(contenedor);
+      break;
     case 'nueva-venta':
       titulo.innerText = 'Registrar Nueva Venta';
       renderizarNuevaVenta(contenedor);
@@ -179,9 +183,79 @@ function navegar(vista, actualizarUrl = true) {
   }
 }
 
+function renderizarAyuda(c) {
+  c.innerHTML = `
+    <section class="guia-bienvenida">
+      <div>
+        <span class="guia-etiqueta">BIENVENIDO AL SISTEMA</span>
+        <h3>¿Qué puedes hacer aquí?</h3>
+        <p>Esta página ayuda a controlar las ventas, el inventario y las pérdidas de una carnicería. No necesitas saber MongoDB para usarla: solo captura la información desde los formularios y el sistema guarda los datos.</p>
+      </div>
+      <div class="guia-bienvenida-icono" aria-hidden="true">🥩</div>
+    </section>
+
+    <div class="guia-grid">
+      <article class="tarjeta-guia">
+        <div class="guia-icono">📊</div>
+        <h4>Dashboard</h4>
+        <p>Revisa rápidamente ingresos, kilos vendidos, número de ventas, costo de mermas y ganancia estimada. Las gráficas ayudan a comparar meses, regiones y cortes.</p>
+      </article>
+      <article class="tarjeta-guia">
+        <div class="guia-icono">🧾</div>
+        <h4>Nueva venta</h4>
+        <p>Elige la sucursal, el cliente, los cortes, los kilos y el método de pago. Al finalizar, se genera un folio y se descuenta el inventario por lotes.</p>
+      </article>
+      <article class="tarjeta-guia">
+        <div class="guia-icono">📚</div>
+        <h4>Historial de ventas</h4>
+        <p>Busca ventas por folio o cliente. También puedes cancelar una venta; el sistema marca la operación y devuelve el stock correspondiente.</p>
+      </article>
+      <article class="tarjeta-guia">
+        <div class="guia-icono">📦</div>
+        <h4>Inventario de lotes</h4>
+        <p>Consulta cuánto producto hay por sucursal y cuándo vence cada lote. Registra entradas indicando corte, kilos, costo y fecha de caducidad.</p>
+      </article>
+      <article class="tarjeta-guia">
+        <div class="guia-icono">⚠️</div>
+        <h4>Registro de mermas</h4>
+        <p>Registra producto perdido por caducidad, mal corte, descongelado, contaminación u otro motivo. Los kilos se descuentan del lote elegido.</p>
+      </article>
+      <article class="tarjeta-guia">
+        <div class="guia-icono">🌎</div>
+        <h4>Historial regional</h4>
+        <p>Compara qué cortes y tipos de carne se venden más por región y por mes. Usa los filtros para revisar una zona o categoría específica.</p>
+      </article>
+      <article class="tarjeta-guia">
+        <div class="guia-icono">🥩</div>
+        <h4>Catálogo de cortes</h4>
+        <p>Administra los productos que vende la carnicería: nombre, tipo de carne, precio por kilo y estado activo.</p>
+      </article>
+      <article class="tarjeta-guia">
+        <div class="guia-icono">👥</div>
+        <h4>Clientes</h4>
+        <p>Guarda los datos de las personas, restaurantes y mayoristas que realizan compras para poder identificarlos en futuras ventas.</p>
+      </article>
+    </div>
+
+    <section class="tarjeta-guia guia-flujo">
+      <h3>Flujo recomendado para trabajar</h3>
+      <div class="guia-pasos">
+        <div><span class="paso-numero">1</span><strong>Prepara catálogos</strong><small>Revisa cortes, clientes y sucursales.</small></div>
+        <div><span class="paso-numero">2</span><strong>Registra inventario</strong><small>Agrega los lotes que entraron a cada sucursal.</small></div>
+        <div><span class="paso-numero">3</span><strong>Registra ventas</strong><small>Captura cliente, productos, kilos y pago.</small></div>
+        <div><span class="paso-numero">4</span><strong>Controla pérdidas</strong><small>Registra las mermas para conocer el costo real.</small></div>
+        <div><span class="paso-numero">5</span><strong>Analiza resultados</strong><small>Consulta dashboard e historial regional.</small></div>
+      </div>
+    </section>
+
+    <div class="ayuda-nota"><strong>Sobre los datos:</strong> cada registro se guarda en MongoDB. La etiqueta de estado en la parte superior indica si la conexión está disponible.</div>
+  `;
+}
+
 // 1. Dashboard
 async function renderizarDashboard(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>¿Qué muestra esta pantalla?</strong> Un resumen visual del movimiento de la carnicería. Usa las gráficas para detectar qué se vende más y en qué regiones.</div>
     <div class="grid-kpis" id="kpis-contenedor">
       <div class="tarjeta-kpi"><span class="titulo">Ingresos Totales</span><h3 class="valor" id="kpi-ingresos">...</h3></div>
       <div class="tarjeta-kpi"><span class="titulo">Kilos Vendidos</span><h3 class="valor" id="kpi-kg">...</h3></div>
@@ -277,6 +351,7 @@ let catalogoCortesCache = [];
 
 async function renderizarNuevaVenta(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>Cómo registrar una venta:</strong> selecciona la sucursal y el cliente, agrega uno o más cortes con sus kilos, elige el pago y presiona <em>Finalizar Venta</em>.</div>
     <div class="grid-venta-responsive" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
       <div class="tarjeta-tabla" style="padding: 20px;">
         <h4 style="margin-bottom: 16px;">1. Datos de la Operación</h4>
@@ -439,6 +514,7 @@ async function finalizarVenta() {
 // 3. Historial de Ventas
 async function renderizarHistorialVentas(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>Consulta tus operaciones:</strong> escribe un folio o nombre de cliente para buscar. Las ventas completadas pueden cancelarse si fue necesario corregirlas.</div>
     <div class="tarjeta-tabla">
       <div class="tabla-header">
         <input type="text" id="busq-venta" placeholder="Buscar por folio o cliente..." class="form-control" style="max-width: 300px;" oninput="cargarVentasFiltradas()">
@@ -515,6 +591,7 @@ async function cancelarVenta(id) {
 // 4. Inventario
 async function renderizarInventario(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>Control de inventario:</strong> revisa el stock por sucursal y registra cada entrada con su fecha de caducidad para facilitar la rotación FIFO.</div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <div style="display: flex; gap: 10px; align-items: center;">
         <label style="font-weight: 600;">Sucursal:</label>
@@ -591,6 +668,7 @@ async function cargarInventarioSucursal() {
 // 5. Mermas
 async function renderizarMermas(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>Qué es una merma:</strong> producto que se perdió o ya no puede venderse. Selecciona el lote, captura los kilos y explica el motivo.</div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h3 style="font-size: 1.1rem;">Pérdidas y Mermas Operativas</h3>
       <button class="btn btn-primario" onclick="abrirModalMerma()">+ Registrar Merma</button>
@@ -644,6 +722,7 @@ async function renderizarMermas(c) {
 // 6. Historial Regional
 async function renderizarHistorialRegional(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>Para qué sirve:</strong> compara el comportamiento de ventas por región, mes, corte y tipo de carne usando los filtros.</div>
     <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
       <div>
         <label style="font-size: 0.85rem; font-weight: 600;">Región:</label>
@@ -771,9 +850,10 @@ async function cargarHistorialRegional() {
   }
 }
 
-// 7. Cortes (CRUD MySQL)
+// 7. Cortes (CRUD MongoDB)
 async function renderizarCortes(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>Catálogo de cortes:</strong> aquí defines los productos disponibles y su precio por kilo. Desactivar un corte evita usarlo en nuevas ventas.</div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h3 style="font-size: 1.1rem;">Catálogo Oficial de Cortes</h3>
       <button class="btn btn-primario" onclick="abrirModalCorte()">+ Nuevo Corte</button>
@@ -832,9 +912,10 @@ async function desactivarCorte(id) {
   }
 }
 
-// 8. Clientes (CRUD MySQL)
+// 8. Clientes (CRUD MongoDB)
 async function renderizarClientes(c) {
   c.innerHTML = `
+    <div class="ayuda-inline"><strong>Directorio de clientes:</strong> registra personas, restaurantes o mayoristas para seleccionarlos al crear una venta.</div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h3 style="font-size: 1.1rem;">Directorio de Clientes</h3>
       <button class="btn btn-primario" onclick="abrirModalCliente()">+ Registrar Cliente</button>

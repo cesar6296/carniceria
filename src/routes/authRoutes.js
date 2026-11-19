@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body } = require('express-validator');
 const { validarCampos } = require('../middlewares/errorMiddleware');
 const { obtenerJwtSecret, esProduccion } = require('../config/jwt');
+const UsuarioRepository = require('../repositories/usuarioRepository');
 
 const router = express.Router();
 const COOKIE_SESION = 'carniceria_session';
@@ -29,7 +30,6 @@ router.post(
   async (req, res, next) => {
     try {
       const { usuario, password } = req.body;
-      const usuarioAdmin = process.env.ADMIN_USERNAME || 'uzielitoremix';
       const hashPassword = process.env.ADMIN_PASSWORD_HASH;
 
       if (!hashPassword) {
@@ -39,16 +39,20 @@ router.post(
         });
       }
 
-      const passwordValida = await bcrypt.compare(password, hashPassword);
-      if (usuario !== usuarioAdmin || !passwordValida) {
+      await UsuarioRepository.asegurarAdministrador();
+      const usuarioMongo = await UsuarioRepository.buscarPorUsuario(usuario);
+      const passwordValida = usuarioMongo
+        ? await bcrypt.compare(password, usuarioMongo.password_hash)
+        : false;
+      if (!passwordValida) {
         return res.status(401).json({ ok: false, mensaje: 'Usuario o contraseña incorrectos' });
       }
 
       const datosUsuario = {
-        id: 'admin',
-        nombre: process.env.ADMIN_DISPLAY_NAME || 'Uzielito Remix',
-        usuario: usuarioAdmin,
-        rol: 'admin'
+        id: usuarioMongo.id,
+        nombre: usuarioMongo.nombre,
+        usuario: usuarioMongo.usuario,
+        rol: usuarioMongo.rol
       };
       const token = jwt.sign(datosUsuario, obtenerJwtSecret(), { expiresIn: '8h' });
 

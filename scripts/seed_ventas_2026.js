@@ -92,16 +92,28 @@ function generarVentas(sucursales, cortes, clientes, ahora = new Date()) {
 }
 
 async function ejecutarSeed() {
-  const [sucursales, cortes, clientes] = await Promise.all([
-    CatalogoRepository.listarSucursales(),
-    CatalogoRepository.listarCortes(),
-    CatalogoRepository.listarClientes()
-  ]);
+  const esDryRun = process.argv.includes('--dry-run');
+  let sucursales;
+  let cortes;
+  let clientes;
+
+  if (esDryRun) {
+    const datosIniciales = require('../src/data/catalogosIniciales');
+    ({ sucursales, cortes, clientes } = datosIniciales);
+  } else {
+    await conectarMongoDB();
+    await CatalogoRepository.sembrarCatalogos();
+    [sucursales, cortes, clientes] = await Promise.all([
+      CatalogoRepository.listarSucursales(),
+      CatalogoRepository.listarCortes(),
+      CatalogoRepository.listarClientes()
+    ]);
+  }
   const datos = generarVentas(sucursales, cortes, clientes);
   const meses = [...new Set(datos.ventas.map(venta => venta.fecha_venta.getUTCMonth() + 1))];
 
   console.log(`Se prepararon ${datos.ventas.length} ventas ficticias para ${ANIO}, cubriendo ${meses.length} meses.`);
-  if (process.argv.includes('--dry-run')) {
+  if (esDryRun) {
     console.log('Dry run: no se conectó ni se escribieron datos en MongoDB.');
     return;
   }
@@ -109,7 +121,6 @@ async function ejecutarSeed() {
     throw new Error('Configura MONGODB_URI para guardar los datos en una base MongoDB persistente.');
   }
 
-  await conectarMongoDB();
   if (probarConexionMongo().tipo === 'mongodb-memory') {
     await mongoose.disconnect();
     throw new Error('MongoDB Atlas no respondió y se activó la memoria temporal. Corrige MONGODB_URI antes de cargar datos persistentes.');
