@@ -78,11 +78,18 @@ El siguiente comando demuestra inserción, consultas, eliminación aleatoria e i
 npm run mongo:operaciones -- insertar
 npm run mongo:operaciones -- consultar
 npm run mongo:operaciones -- eliminar
+npm run mongo:operaciones -- eliminar --coleccion=clientes
 npm run mongo:operaciones -- indices
 npm run mongo:operaciones -- demo
 ```
 
-`demo` ejecuta las cuatro etapas en orden. La eliminación aleatoria usa `$sample` sobre `ventas` y la indexación ejecuta `createIndexes()` en todas las colecciones del sistema.
+`demo` ejecuta las cuatro etapas en orden. Por defecto, la eliminación aleatoria usa `$sample` sobre `clientes`; puedes elegir otra colección con `--coleccion=ventas`, `--coleccion=mermas`, etc. La eliminación real usa `deleteOne()` y la indexación ejecuta `createIndexes()` en todas las colecciones del sistema.
+
+Para comprobar el flujo sin tocar datos:
+
+```bash
+npm run mongo:operaciones -- demo --dry-run
+```
 
 ## Pruebas
 

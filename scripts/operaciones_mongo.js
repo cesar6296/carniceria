@@ -70,16 +70,25 @@ async function consultarDatos() {
   console.log('Consulta de ventas recientes:', JSON.stringify(ventasRecientes, null, 2));
 }
 
-async function eliminarDocumentoAleatorio() {
-  const muestra = await Cliente.aggregate([{ $sample: { size: 1 } }, { $project: { _id: 1, id: 1, nombre: 1 } }]);
+async function eliminarDocumentoAleatorio(nombreColeccion = 'clientes') {
+  const Model = modelos[nombreColeccion];
+  if (!Model) {
+    throw new Error(`Colección no válida: ${nombreColeccion}. Usa: ${Object.keys(modelos).join(', ')}`);
+  }
+
+  const muestra = await Model.aggregate([
+    { $sample: { size: 1 } },
+    { $project: { _id: 1, id: 1, nombre: 1, folio: 1 } }
+  ]);
   if (!muestra.length) {
-    console.log('No hay clientes para eliminar aleatoriamente.');
+    console.log(`No hay documentos para eliminar aleatoriamente en ${nombreColeccion}.`);
     return;
   }
 
-  const [cliente] = muestra;
-  await Cliente.deleteOne({ _id: cliente._id });
-  console.log(`Eliminado aleatoriamente el cliente ${cliente.id} de la colección clientes.`);
+  const [documento] = muestra;
+  await Model.deleteOne({ _id: documento._id });
+  const identificador = documento.folio || documento.nombre || documento.id || documento._id;
+  console.log(`Eliminado aleatoriamente ${identificador} de la colección ${nombreColeccion}.`);
 }
 
 async function crearIndices() {
@@ -93,6 +102,8 @@ async function crearIndices() {
 async function ejecutar() {
   const operacion = process.argv[2] || 'demo';
   const esDryRun = process.argv.includes('--dry-run');
+  const argumentoColeccion = process.argv.find(argumento => argumento.startsWith('--coleccion='));
+  const coleccionEliminacion = argumentoColeccion ? argumentoColeccion.split('=')[1] : 'clientes';
   const operacionesValidas = new Set(['insertar', 'consultar', 'eliminar', 'indices', 'demo']);
   if (!operacionesValidas.has(operacion)) {
     throw new Error('Usa: insertar, consultar, eliminar, indices o demo.');
@@ -101,7 +112,7 @@ async function ejecutar() {
   if (esDryRun) {
     console.log(`Dry run MongoDB: se ejecutaría la operación "${operacion}" sin insertar, eliminar ni crear índices.`);
     if (operacion === 'demo') {
-      console.log('Orden: insertar cliente demo → consultar colecciones → eliminar un cliente con $sample → crear índices.');
+      console.log(`Orden: insertar cliente demo → consultar colecciones → eliminar un documento aleatorio de ${coleccionEliminacion} con $sample → crear índices.`);
     }
     return;
   }
@@ -115,12 +126,12 @@ async function ejecutar() {
 
   if (operacion === 'insertar') await insertarClienteDemo();
   if (operacion === 'consultar') await consultarDatos();
-  if (operacion === 'eliminar') await eliminarDocumentoAleatorio();
+  if (operacion === 'eliminar') await eliminarDocumentoAleatorio(coleccionEliminacion);
   if (operacion === 'indices') await crearIndices();
   if (operacion === 'demo') {
     await insertarClienteDemo();
     await consultarDatos();
-    await eliminarDocumentoAleatorio();
+    await eliminarDocumentoAleatorio(coleccionEliminacion);
     await crearIndices();
   }
 }
