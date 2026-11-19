@@ -33,6 +33,15 @@ const VentaSchema = new mongoose.Schema({
       type: String, 
       required: true,
       enum: ['mostrador', 'restaurante', 'mayorista'] 
+    },
+    ciudad: { type: String, trim: true },
+    pais: { type: String, trim: true },
+    ubicacion: {
+      ciudad: { type: String, trim: true },
+      pais: { type: String, trim: true },
+      lat: { type: Number, min: -90, max: 90 },
+      lng: { type: Number, min: -180, max: 180 },
+      precision: { type: String, enum: ['coordenadas_proporcionadas', 'ciudad', 'pais', 'sin_ubicacion'] }
     }
   },
   sucursal: {
@@ -67,5 +76,7 @@ const VentaSchema = new mongoose.Schema({
 VentaSchema.index({ fecha_venta: -1 });
 VentaSchema.index({ 'sucursal.region_id': 1, fecha_venta: -1 });
 VentaSchema.index({ 'items.corte_id': 1 });
+VentaSchema.index({ estatus: 1, fecha_venta: -1 });
+VentaSchema.index({ updatedAt: -1 });
 
 module.exports = mongoose.model('Venta', VentaSchema);

@@ -3,6 +3,7 @@ const CatalogoRepository = require('../repositories/catalogoRepository');
 const InventarioLote = require('../models/InventarioLote');
 const Venta = require('../models/Venta');
 const HistorialRegional = require('../models/HistorialRegional');
+const { obtenerUbicacion } = require('./geolocalizacionService');
 
 const VentaService = {
   async generarFolio() {
@@ -137,7 +138,10 @@ const VentaService = {
       cliente: {
         id: cliente.id,
         nombre: cliente.nombre,
-        tipo: cliente.tipo
+        tipo: cliente.tipo,
+        ciudad: cliente.ciudad,
+        pais: cliente.pais,
+        ubicacion: obtenerUbicacion(cliente)
       },
       sucursal: {
         id: sucursal.id,

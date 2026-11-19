@@ -12,6 +12,7 @@ const ClienteSchema = new mongoose.Schema({
   telefono: { type: String, trim: true },
   correo: { type: String, trim: true, lowercase: true, sparse: true, unique: true },
   ciudad: { type: String, trim: true },
+  pais: { type: String, trim: true, default: 'México' },
   region_id: { type: Number, min: 1, index: true },
   region_nombre: { type: String, trim: true }
 }, {

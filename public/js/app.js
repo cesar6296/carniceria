@@ -3,6 +3,10 @@
 let vistaActual = 'dashboard';
 let graficasInstanciadas = {};
 let intervaloSalud = null;
+let intervaloLiveView = null;
+let globoLiveView = null;
+let globoResizeHandler = null;
+let ultimaVentaLiveId = null;
 
 function alternarSidebar() {
   const sidebar = document.getElementById('sidebar-menu');
@@ -13,7 +17,7 @@ function alternarSidebar() {
 
 function obtenerVistaDesdeRuta() {
   const ruta = window.location.pathname.replace(/^\//, '');
-  const rutasValidas = ['dashboard', 'ayuda', 'operaciones-mongo', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes'];
+  const rutasValidas = ['dashboard', 'ayuda', 'operaciones-mongo', 'clientes-globales', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes'];
   return rutasValidas.includes(ruta) ? ruta : 'dashboard';
 }
 
@@ -47,7 +51,10 @@ async function iniciarApp() {
 
 function mostrarLogin(mensaje = '') {
   if (intervaloSalud) clearInterval(intervaloSalud);
+  if (intervaloLiveView) clearInterval(intervaloLiveView);
   intervaloSalud = null;
+  intervaloLiveView = null;
+  destruirGloboLiveView();
   document.getElementById('app-privada').style.display = 'none';
   document.getElementById('vista-login').style.display = 'flex';
   document.getElementById('login-error').innerText = mensaje;
@@ -119,6 +126,9 @@ async function verificarSalud() {
 
 function navegar(vista, actualizarUrl = true) {
   vistaActual = vista;
+  if (intervaloLiveView) clearInterval(intervaloLiveView);
+  intervaloLiveView = null;
+  destruirGloboLiveView();
   if (actualizarUrl) {
     window.history.pushState({ vista }, '', `/${vista}`);
   }
@@ -155,6 +165,10 @@ function navegar(vista, actualizarUrl = true) {
     case 'operaciones-mongo':
       titulo.innerText = 'Operaciones de MongoDB';
       renderizarOperacionesMongo(contenedor);
+      break;
+    case 'clientes-globales':
+      titulo.innerText = 'Clientes Globales — Live View';
+      renderizarClientesGlobales(contenedor);
       break;
     case 'nueva-venta':
       titulo.innerText = 'Registrar Nueva Venta';
@@ -335,6 +349,196 @@ async function crearIndicesDesdeWeb() {
   } catch (e) {
     console.error(e);
   }
+}
+
+function escaparHtml(valor) {
+  return String(valor ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function destruirGloboLiveView() {
+  if (globoResizeHandler) {
+    window.removeEventListener('resize', globoResizeHandler);
+    globoResizeHandler = null;
+  }
+  if (globoLiveView && typeof globoLiveView._destructor === 'function') {
+    globoLiveView._destructor();
+  }
+  globoLiveView = null;
+}
+
+function inicializarGloboLiveView() {
+  const contenedor = document.getElementById('globo-live-view');
+  if (!contenedor) return;
+  if (typeof window.Globe !== 'function') {
+    contenedor.innerHTML = '<div class="live-sin-globo">El globo 3D no pudo cargar. La actividad y las estadísticas siguen disponibles.</div>';
+    return;
+  }
+
+  const ancho = Math.max(contenedor.clientWidth, 320);
+  globoLiveView = window.Globe()(contenedor)
+    .width(ancho)
+    .height(560)
+    .backgroundColor('#020617')
+    .showAtmosphere(true)
+    .atmosphereColor('#38bdf8')
+    .atmosphereAltitude(0.18)
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+    .pointsData([])
+    .pointLat('lat')
+    .pointLng('lng')
+    .pointAltitude(0.035)
+    .pointRadius(0.42)
+    .pointColor(() => '#22d3ee')
+    .pointLabel(d => `<div><strong>${escaparHtml(d.pais || 'Ubicación')}</strong><br>${escaparHtml(d.ciudad || 'Ubicación aproximada')}<br>${escaparHtml(d.folio || '')}</div>`)
+    .ringsData([])
+    .ringLat('lat')
+    .ringLng('lng')
+    .ringColor(() => '#22d3ee')
+    .ringMaxRadius(4)
+    .ringPropagationSpeed(1.5)
+    .ringRepeatPeriod(1800)
+    .arcsData([])
+    .arcStartLat('startLat')
+    .arcStartLng('startLng')
+    .arcEndLat('endLat')
+    .arcEndLng('endLng')
+    .arcColor(() => '#a855f7')
+    .arcAltitudeAutoScale(0.35)
+    .arcStroke(0.65)
+    .arcDashLength(0.45)
+    .arcDashGap(1.2)
+    .arcDashAnimateTime(1800)
+    .arcLabel(d => `${escaparHtml(d.folio || 'Venta')} · ${API.formatoMoneda(d.total)}`);
+
+  const controls = globoLiveView.controls();
+  controls.enableZoom = true;
+  controls.enablePan = false;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.35;
+
+  globoResizeHandler = () => {
+    if (globoLiveView && document.getElementById('globo-live-view')) {
+      globoLiveView.width(Math.max(document.getElementById('globo-live-view').clientWidth, 320));
+    }
+  };
+  window.addEventListener('resize', globoResizeHandler);
+
+  if (window.topojson) {
+    fetch('https://unpkg.com/world-atlas@2.0.2/countries-110m.json')
+      .then(res => res.json())
+      .then(world => {
+        if (!globoLiveView) return;
+        globoLiveView
+          .polygonsData(window.topojson.feature(world, world.objects.countries).features)
+          .polygonCapColor(() => 'rgba(30, 41, 59, 0.72)')
+          .polygonSideColor(() => 'rgba(14, 165, 233, 0.12)')
+          .polygonStrokeColor(() => 'rgba(56, 189, 248, 0.28)')
+          .polygonAltitude(0.006)
+          .polygonLabel(d => escaparHtml(d.properties?.name || 'País'));
+      })
+      .catch(() => {});
+  }
+}
+
+function actualizarGloboLiveView(datos) {
+  if (!globoLiveView) return;
+  const puntos = datos.puntos || [];
+  const sede = datos.sede;
+  const arcos = sede && Number.isFinite(sede.lat) && Number.isFinite(sede.lng)
+    ? puntos.map(punto => ({
+      ...punto,
+      startLat: sede.lat,
+      startLng: sede.lng,
+      endLat: punto.lat,
+      endLng: punto.lng
+    }))
+    : [];
+  globoLiveView.pointsData(puntos).ringsData(puntos).arcsData(arcos);
+}
+
+function renderizarActividadLive(ventas) {
+  const lista = document.getElementById('live-actividad-lista');
+  if (!lista) return;
+  if (!ventas.length) {
+    lista.innerHTML = '<li class="live-vacio">Todavía no hay ventas registradas.</li>';
+    return;
+  }
+  lista.innerHTML = ventas.map(venta => {
+    const ubicacion = venta.cliente.ubicacion;
+    const ciudadPais = venta.cliente.ciudad || venta.cliente.pais
+      ? `${venta.cliente.ciudad || 'Ubicación aproximada'}${venta.cliente.pais ? `, ${venta.cliente.pais}` : ''}`
+      : 'Ubicación no disponible';
+    const productos = venta.productos.map(producto => `${escaparHtml(producto.corte)} (${producto.kg} kg)`).join(', ');
+    const estado = venta.estatus === 'completada' ? 'Confirmada' : 'Cancelada';
+    return `
+      <li class="live-venta ${venta.id === ultimaVentaLiveId ? 'live-nueva' : ''}">
+        <div class="live-venta-cabecera"><strong>${escaparHtml(venta.folio)}</strong><span class="live-estado ${venta.estatus}">${estado}</span></div>
+        <div class="live-venta-producto">${productos || 'Sin productos'}</div>
+        <div class="live-venta-detalle"><span>${escaparHtml(ciudadPais)}</span><strong>${API.formatoMoneda(venta.total)}</strong></div>
+        <small>${API.formatoFecha(venta.fecha)}${Number.isFinite(ubicacion?.lat) ? ' · Ubicación en globo' : ' · Sin coordenadas'}</small>
+      </li>
+    `;
+  }).join('');
+}
+
+async function cargarClientesGlobales() {
+  const contenedor = document.getElementById('globo-live-view');
+  if (!contenedor) return;
+  try {
+    const res = await API.get('/api/live-view?limite=40');
+    const datos = res.datos;
+    document.getElementById('live-ventas-hoy').innerText = datos.estadisticas.ventasHoy;
+    document.getElementById('live-pedidos-hoy').innerText = datos.estadisticas.pedidosHoy;
+    document.getElementById('live-ingresos-hoy').innerText = API.formatoMoneda(datos.estadisticas.ingresosHoy);
+    document.getElementById('live-clientes-activos').innerText = datos.estadisticas.clientesActivos;
+    document.getElementById('live-paises').innerText = datos.estadisticas.paises.length || '0';
+    const ultima = datos.ultimaVenta;
+    document.getElementById('live-ultima-venta').innerText = ultima
+      ? `${ultima.folio} · ${API.formatoMoneda(ultima.total)}`
+      : 'Sin ventas todavía';
+    actualizarGloboLiveView(datos);
+    if (ultima && ultima.id !== ultimaVentaLiveId) {
+      ultimaVentaLiveId = ultima.id;
+    }
+    renderizarActividadLive(datos.ventasRecientes || []);
+  } catch (error) {
+    console.error('No se pudo actualizar Clientes Globales:', error);
+  }
+}
+
+function renderizarClientesGlobales(c) {
+  ultimaVentaLiveId = null;
+  c.innerHTML = `
+    <div class="ayuda-inline"><strong>Live View real:</strong> el globo solo muestra puntos cuando una venta confirmada tiene ciudad o país identificable. Si falta ubicación, la venta aparece en la actividad sin inventar coordenadas.</div>
+    <div class="live-kpis">
+      <div class="tarjeta-kpi live-kpi"><span class="titulo">Ventas de hoy</span><h3 class="valor" id="live-ventas-hoy">...</h3></div>
+      <div class="tarjeta-kpi live-kpi"><span class="titulo">Pedidos confirmados</span><h3 class="valor" id="live-pedidos-hoy">...</h3></div>
+      <div class="tarjeta-kpi live-kpi"><span class="titulo">Ingresos de hoy</span><h3 class="valor" id="live-ingresos-hoy">...</h3></div>
+      <div class="tarjeta-kpi live-kpi"><span class="titulo">Clientes activos</span><h3 class="valor" id="live-clientes-activos">...</h3></div>
+      <div class="tarjeta-kpi live-kpi"><span class="titulo">Países detectados</span><h3 class="valor" id="live-paises">...</h3></div>
+    </div>
+    <div class="live-layout">
+      <section class="live-globo-card">
+        <div class="live-card-heading"><div><span class="live-etiqueta">ACTUALIZACIÓN AUTOMÁTICA</span><h3>Ventas en tiempo real</h3></div><span class="live-pulso">● EN VIVO</span></div>
+        <div id="globo-live-view" class="globo-live-view"><div class="live-cargando">Cargando globo 3D...</div></div>
+        <div class="live-sede">Sede de conexión: la primera sucursal registrada. Las líneas salen de esa ubicación hacia cada comprador localizado.</div>
+      </section>
+      <aside class="live-actividad-card">
+        <div class="live-card-heading"><div><span class="live-etiqueta">ACTIVIDAD</span><h3>Ventas recientes</h3></div></div>
+        <div class="live-ultima"><span>Última venta</span><strong id="live-ultima-venta">Consultando...</strong></div>
+        <ul id="live-actividad-lista" class="live-actividad-lista"><li class="live-vacio">Consultando ventas reales...</li></ul>
+      </aside>
+    </div>
+  `;
+  inicializarGloboLiveView();
+  cargarClientesGlobales();
+  intervaloLiveView = setInterval(cargarClientesGlobales, 8000);
 }
 
 // 1. Dashboard
@@ -1322,9 +1526,15 @@ function abrirModalCliente() {
         <input type="email" id="m-cli-correo" class="form-control" placeholder="cliente@correo.com">
       </div>
     </div>
-    <div style="margin-bottom: 20px;">
-      <label style="font-size: 0.85rem; font-weight: 600;">Ciudad:</label>
-      <input type="text" id="m-cli-ciudad" class="form-control" placeholder="Ej. Culiacán">
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <div style="flex: 1;">
+        <label style="font-size: 0.85rem; font-weight: 600;">Ciudad:</label>
+        <input type="text" id="m-cli-ciudad" class="form-control" placeholder="Ej. Culiacán">
+      </div>
+      <div style="flex: 1;">
+        <label style="font-size: 0.85rem; font-weight: 600;">País:</label>
+        <input type="text" id="m-cli-pais" class="form-control" value="México" placeholder="Ej. México">
+      </div>
     </div>
     <div style="margin-bottom: 20px;">
       <label style="font-size: 0.85rem; font-weight: 600;">Región:</label>
@@ -1354,6 +1564,7 @@ async function guardarCliente() {
   const telefono = document.getElementById('m-cli-telefono').value.trim();
   const correo = document.getElementById('m-cli-correo').value.trim();
   const ciudad = document.getElementById('m-cli-ciudad').value.trim();
+  const pais = document.getElementById('m-cli-pais').value.trim();
   const regionSeleccionada = document.getElementById('m-cli-region').value;
   const region_id = regionSeleccionada ? parseInt(regionSeleccionada, 10) : undefined;
 
@@ -1363,7 +1574,7 @@ async function guardarCliente() {
   }
 
   try {
-    await API.post('/api/clientes', { nombre, tipo, telefono, correo, ciudad, region_id });
+    await API.post('/api/clientes', { nombre, tipo, telefono, correo, ciudad, pais, region_id });
     API.mostrarToast('Cliente guardado exitosamente', 'exito');
     cerrarModal();
     renderizarClientes(document.getElementById('contenido-vista'));

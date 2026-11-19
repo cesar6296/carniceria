@@ -49,7 +49,8 @@ const CatalogoRepository = {
     }));
     const clientes = datosIniciales.clientes.map(cliente => ({
       ...cliente,
-      region_nombre: nombresRegion.get(cliente.region_id)
+      region_nombre: nombresRegion.get(cliente.region_id),
+      pais: cliente.pais || 'México'
     }));
 
     await Promise.all([
@@ -157,6 +158,7 @@ const CatalogoRepository = {
       telefono: datos.telefono || undefined,
       correo: datos.correo || undefined,
       ciudad: datos.ciudad || undefined,
+      pais: datos.pais || 'México',
       region_id: regionId,
       region_nombre: await nombreDeRegion(regionId)
     });
@@ -170,7 +172,8 @@ const CatalogoRepository = {
       ...(datos.tipo !== undefined ? { tipo: datos.tipo } : {}),
       ...(datos.telefono !== undefined ? { telefono: datos.telefono } : {}),
       ...(datos.correo !== undefined ? { correo: datos.correo || undefined } : {}),
-      ...(datos.ciudad !== undefined ? { ciudad: datos.ciudad } : {})
+      ...(datos.ciudad !== undefined ? { ciudad: datos.ciudad } : {}),
+      ...(datos.pais !== undefined ? { pais: datos.pais || 'México' } : {})
     };
     if (datos.region_id !== undefined) {
       cambios.region_id = datos.region_id ? numeroValido(datos.region_id) : undefined;

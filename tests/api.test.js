@@ -96,6 +96,13 @@ describe('Pruebas de Integración - API Carnicería', () => {
       expect(resumen.status).toBe(200);
       expect(resumen.body.datos).toHaveProperty('clientes');
 
+      const liveView = await request(app)
+        .get('/api/live-view')
+        .set('Cookie', cookie.split(';')[0]);
+      expect(liveView.status).toBe(200);
+      expect(liveView.body.datos).toHaveProperty('estadisticas');
+      expect(liveView.body.datos).toHaveProperty('ventasRecientes');
+
       const eliminado = await request(app)
         .post('/api/mongo/eliminar-aleatorio')
         .set('Cookie', cookie.split(';')[0])

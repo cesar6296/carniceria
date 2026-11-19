@@ -16,6 +16,7 @@ const mermasRoutes = require('./routes/mermasRoutes');
 const ventasRoutes = require('./routes/ventasRoutes');
 const reportesRoutes = require('./routes/reportesRoutes');
 const mongoRoutes = require('./routes/mongoRoutes');
+const liveViewRoutes = require('./routes/liveViewRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { verificarToken } = require('./middlewares/authMiddleware');
 
@@ -87,6 +88,7 @@ app.use('/api/mermas', mermasRoutes);
 app.use('/api/ventas', ventasRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/mongo', mongoRoutes);
+app.use('/api/live-view', liveViewRoutes);
 
 app.use(manejadorErrores);
 

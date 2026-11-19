@@ -4,6 +4,7 @@ const { conectarMongoDB, probarConexionMongo } = require('../src/config/mongo');
 const CatalogoRepository = require('../src/repositories/catalogoRepository');
 const Venta = require('../src/models/Venta');
 const HistorialRegional = require('../src/models/HistorialRegional');
+const { obtenerUbicacion } = require('../src/services/geolocalizacionService');
 
 const ANIO = 2026;
 const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
@@ -71,7 +72,14 @@ function generarVentas(sucursales, cortes, clientes, ahora = new Date()) {
       ventas.push({
         folio: `SIM-${ANIO}-${String(numeroFolio).padStart(6, '0')}`,
         fecha_venta: fechaVenta,
-        cliente: { id: cliente.id, nombre: cliente.nombre, tipo: cliente.tipo },
+        cliente: {
+          id: cliente.id,
+          nombre: cliente.nombre,
+          tipo: cliente.tipo,
+          ciudad: cliente.ciudad,
+          pais: cliente.pais,
+          ubicacion: obtenerUbicacion(cliente)
+        },
         sucursal: {
           id: sucursal.id,
           nombre: sucursal.nombre,

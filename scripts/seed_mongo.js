@@ -9,6 +9,7 @@ const InventarioLote = require('../src/models/InventarioLote');
 const Merma = require('../src/models/Merma');
 const HistorialRegional = require('../src/models/HistorialRegional');
 const LecturaRefrigeracion = require('../src/models/LecturaRefrigeracion');
+const { obtenerUbicacion } = require('../src/services/geolocalizacionService');
 
 function obtenerCorteAleatorioParaRegion(regionId, cortes) {
   const r = Math.random();
@@ -151,7 +152,10 @@ async function ejecutarSeed(desconectarAlTerminar = true) {
       cliente: {
         id: cliente.id,
         nombre: cliente.nombre,
-        tipo: cliente.tipo
+        tipo: cliente.tipo,
+        ciudad: cliente.ciudad,
+        pais: cliente.pais,
+        ubicacion: obtenerUbicacion(cliente)
       },
       sucursal: {
         id: sucursal.id,

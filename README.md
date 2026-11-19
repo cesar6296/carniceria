@@ -87,6 +87,19 @@ npm run mongo:operaciones -- demo
 
 También puedes hacer estas operaciones desde la página web, entrando al menú **Operaciones MongoDB**. La pantalla pide confirmación antes de eliminar y no permite borrar usuarios, regiones ni sucursales para evitar dejar inutilizable el sistema.
 
+## Clientes Globales — Live View
+
+El menú **Clientes Globales** consulta la colección `ventas` real y actualiza la pantalla automáticamente cada 8 segundos. Incluye:
+
+- Globo 3D interactivo con zoom, rotación, países, puntos y arcos animados.
+- Ventas, pedidos, ingresos, clientes activos y países detectados del día.
+- Actividad reciente con producto, importe, ciudad, país, fecha y estatus.
+- Solo las ventas `completada` cuentan en las estadísticas y generan puntos/arcos.
+- Las ventas canceladas se muestran como canceladas y no se contabilizan.
+- Si el cliente no tiene ciudad o país reconocible, aparece en la actividad sin inventar una ubicación.
+
+La ubicación se aproxima por ciudad o por país; nunca se muestran direcciones particulares. Al registrar un cliente nuevo se pueden capturar **Ciudad** y **País** para que sus futuras ventas puedan localizarse en el globo.
+
 Para comprobar el flujo sin tocar datos:
 
 ```bash
