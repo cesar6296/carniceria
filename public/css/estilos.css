@@ -741,12 +741,12 @@ tr:hover td {
   position: relative;
   z-index: 1;
   background: linear-gradient(145deg, rgba(11, 18, 22, 0.94), rgba(7, 12, 15, 0.87));
-  padding: 42px 42px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
+  padding: 44px 44px 34px;
+  border: 1px solid rgba(226, 170, 99, 0.38);
+  border-radius: 20px;
   width: 100%;
-  max-width: 430px;
-  box-shadow: 0 30px 75px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(0, 0, 0, 0.25);
+  max-width: 500px;
+  box-shadow: 0 30px 75px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   backdrop-filter: blur(16px);
   animation: fadeInLogin 0.5s ease;
 }
@@ -757,16 +757,16 @@ tr:hover td {
 }
 
 .login-logo-header {
-  text-align: left;
-  margin-bottom: 30px;
+  text-align: center;
+  margin-bottom: 31px;
 }
 
 .login-logo-header h1 {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(2rem, 5vw, 2.35rem);
+  font-size: clamp(2.1rem, 5vw, 2.75rem);
   letter-spacing: -0.8px;
   color: #f7f2ec;
-  margin: 0 0 8px;
+  margin: 0 0 9px;
 }
 
 .login-logo-header p {
@@ -778,19 +778,21 @@ tr:hover td {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 76px;
+  height: 76px;
+  border-radius: 19px;
   color: #e2aa63;
-  font-size: 1.85rem;
-  background: rgba(226, 170, 99, 0.09);
-  border: 1px solid rgba(226, 170, 99, 0.46);
+  font-size: 2.2rem;
+  background: linear-gradient(145deg, rgba(226, 170, 99, 0.13), rgba(0, 0, 0, 0.3));
+  border: 2px solid rgba(226, 170, 99, 0.85);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 24px rgba(0, 0, 0, 0.2);
-  margin: 0 0 27px;
+  margin: 0 auto 25px;
 }
 
 .login-marca-tag {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 13px;
   background: transparent;
   color: #e2aa63;
   font-size: 0.68rem;
@@ -801,13 +803,37 @@ tr:hover td {
   margin-bottom: 10px;
 }
 
+.login-marca-tag::before,
+.login-marca-tag::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(226, 170, 99, 0.8));
+}
+
+.login-marca-tag::after {
+  background: linear-gradient(90deg, rgba(226, 170, 99, 0.8), transparent);
+}
+
 .login-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   margin: 17px 0 8px;
   color: #d5dfe1;
   font-size: 0.82rem;
   letter-spacing: 0.2px;
   font-weight: 700;
+}
+
+.login-label svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: #e2aa63;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
 }
 
 .login-input {

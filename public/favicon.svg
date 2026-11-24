@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title>La Carnicería</title>
+  <desc>Ícono de un corte de carne</desc>
+  <rect width="64" height="64" rx="16" fill="#11191d"/>
+  <path d="M14 37c2-10 10-18 21-19 8-1 15 2 19 8 3 5 1 11-3 14l-8 7c-5 4-11 4-17 2l-7-3c-4-2-6-5-5-9Z" fill="#b74426" stroke="#f0b36b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M29 21c-1-4 1-8 5-10M37 22c1-4 4-6 8-6" fill="none" stroke="#f0b36b" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M24 38c4 2 8 1 11-2" fill="none" stroke="#6d2016" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="41" cy="37" r="2.5" fill="#f0b36b"/>
+</svg>
