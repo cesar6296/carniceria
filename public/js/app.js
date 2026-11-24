@@ -93,8 +93,20 @@ async function procesarLogin(evento) {
     errorEl.innerText = error.message || 'No se pudo conectar con el servidor.';
   } finally {
     boton.disabled = false;
-    boton.innerText = 'Entrar al sistema';
+    boton.innerText = 'Iniciar sesión';
   }
+}
+
+function alternarVisibilidadPassword() {
+  const passwordInput = document.getElementById('login-password');
+  const boton = document.getElementById('login-password-toggle');
+  if (!passwordInput || !boton) return;
+
+  const mostrar = passwordInput.type === 'password';
+  passwordInput.type = mostrar ? 'text' : 'password';
+  boton.setAttribute('aria-label', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  boton.setAttribute('title', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  boton.setAttribute('aria-pressed', String(mostrar));
 }
 
 async function cerrarSesion() {
