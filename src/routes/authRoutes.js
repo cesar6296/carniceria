@@ -10,14 +10,15 @@ const router = express.Router();
 const COOKIE_SESION = 'carniceria_session';
 const DURACION_SESION_MS = 8 * 60 * 60 * 1000;
 
-function opcionesCookie() {
-  return {
+function opcionesCookie(mantenerSesion = true) {
+  const opciones = {
     httpOnly: true,
     secure: esProduccion,
     sameSite: 'strict',
-    path: '/',
-    maxAge: DURACION_SESION_MS
+    path: '/'
   };
+  if (mantenerSesion) opciones.maxAge = DURACION_SESION_MS;
+  return opciones;
 }
 
 router.post(
@@ -30,6 +31,7 @@ router.post(
   async (req, res, next) => {
     try {
       const { usuario, password } = req.body;
+      const mantenerSesion = req.body.mantenerSesion !== false;
       const hashPassword = process.env.ADMIN_PASSWORD_HASH;
 
       if (!hashPassword) {
@@ -56,7 +58,7 @@ router.post(
       };
       const token = jwt.sign(datosUsuario, obtenerJwtSecret(), { expiresIn: '8h' });
 
-      res.cookie(COOKIE_SESION, token, opcionesCookie());
+      res.cookie(COOKIE_SESION, token, opcionesCookie(mantenerSesion));
       res.json({ ok: true, mensaje: 'Inicio de sesión exitoso', datos: { usuario: datosUsuario } });
     } catch (error) {
       next(error);

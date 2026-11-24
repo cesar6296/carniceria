@@ -40,9 +40,19 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.7"/></svg>
           </button>
         </div>
-        <button class="login-forgot-btn" type="button" aria-disabled="true" title="Función informativa">¿Olvidaste tu contraseña?</button>
+        <div class="login-options">
+          <label class="login-remember" for="login-remember">
+            <input id="login-remember" name="mantenerSesion" type="checkbox" checked>
+            <span class="login-checkmark" aria-hidden="true"></span>
+            <span>Mantener sesión activa</span>
+          </label>
+          <button class="login-forgot-btn" type="button" aria-disabled="true" title="Función informativa">¿Olvidaste tu contraseña?</button>
+        </div>
         <p id="login-error" class="login-error" role="alert" aria-live="polite"></p>
-        <button id="login-submit" class="login-btn-pro" type="submit">Iniciar sesión</button>
+        <button id="login-submit" class="login-btn-pro" type="submit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><path d="M3 12h11M10 8l4 4-4 4"/></svg>
+          <span>Iniciar sesión</span>
+        </button>
       </form>
     </section>
   </main>

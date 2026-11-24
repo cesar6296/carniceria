@@ -73,6 +73,7 @@ async function procesarLogin(evento) {
   evento.preventDefault();
   const usuario = document.getElementById('login-usuario').value.trim();
   const passwordInput = document.getElementById('login-password');
+  const mantenerSesion = document.getElementById('login-remember')?.checked ?? true;
   const boton = document.getElementById('login-submit');
   const errorEl = document.getElementById('login-error');
   errorEl.innerText = '';
@@ -83,7 +84,7 @@ async function procesarLogin(evento) {
     const respuesta = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario, password: passwordInput.value })
+      body: JSON.stringify({ usuario, password: passwordInput.value, mantenerSesion })
     });
     const datos = await respuesta.json();
     if (!respuesta.ok) throw new Error(datos.mensaje || 'No se pudo iniciar sesión.');
