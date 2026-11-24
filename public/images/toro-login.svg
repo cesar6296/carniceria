@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-labelledby="title">
+  <title>Toro decorativo</title>
+  <g fill="none" stroke="#c5955d" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M163 104C116 92 67 63 28 22c4 58 37 105 100 119" stroke-width="14"/>
+    <path d="M317 104c47-12 96-41 135-82-4 58-37 105-100 119" stroke-width="14"/>
+    <path d="M137 126c4-42 39-70 103-70s99 28 103 70l-15 99c-21 31-51 48-88 51-37-3-67-20-88-51Z" fill="#c5955d" fill-opacity=".38" stroke-width="5"/>
+    <path d="M137 138c-20-13-42-10-55 7 18 18 39 20 60 9M343 138c20-13 42-10 55 7-18 18-39 20-60 9" stroke-width="7"/>
+    <path d="M184 150c-14 7-20 19-17 31 13 8 29 6 43-5M296 150c14 7 20 19 17 31-13 8-29 6-43-5" stroke-width="5"/>
+    <path d="M210 220c20 15 40 15 60 0M220 239c13 7 27 7 40 0" stroke-width="6"/>
+    <path d="M211 97c8-8 18-8 26 0M269 97c-8-8-18-8-26 0" stroke-width="5"/>
+  </g>
+</svg>

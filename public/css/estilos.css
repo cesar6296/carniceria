@@ -740,6 +740,7 @@ tr:hover td {
 .login-card-pro {
   position: relative;
   z-index: 1;
+  overflow: hidden;
   background: linear-gradient(145deg, rgba(11, 18, 22, 0.94), rgba(7, 12, 15, 0.87));
   padding: 44px 44px 34px;
   border: 1px solid rgba(226, 170, 99, 0.38);
@@ -751,12 +752,26 @@ tr:hover td {
   animation: fadeInLogin 0.5s ease;
 }
 
+.login-toro-fondo {
+  position: absolute;
+  top: -14px;
+  left: -34px;
+  width: 220px;
+  height: auto;
+  opacity: 0.17;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
 @keyframes fadeInLogin {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .login-logo-header {
+  position: relative;
+  z-index: 1;
   text-align: center;
   margin-bottom: 31px;
 }
@@ -816,6 +831,8 @@ tr:hover td {
 }
 
 .login-label {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -837,6 +854,8 @@ tr:hover td {
 }
 
 .login-input {
+  position: relative;
+  z-index: 1;
   width: 100%;
   min-height: 50px;
   padding: 12px 14px;
@@ -861,6 +880,7 @@ tr:hover td {
 
 .login-password-wrap {
   position: relative;
+  z-index: 1;
 }
 
 .login-password-wrap .login-input {
@@ -908,6 +928,8 @@ tr:hover td {
 }
 
 .login-forgot-btn {
+  position: relative;
+  z-index: 1;
   display: block;
   margin: 11px 0 0 auto;
   padding: 0;
