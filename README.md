@@ -62,6 +62,92 @@ npm run seed:ventas-2026
 
 El `dry-run` solo muestra cuántos documentos se prepararían y no escribe en MongoDB.
 
+### Poblar exactamente 5,000 ventas con Python
+
+Para la evaluación de MongoDB también se incluye un script completo en Python
+que usa `pymongo` y `Faker('es_MX')`. Genera exactamente 5,000 documentos en la
+colección `ventas`, en cinco lotes de 1,000, reutilizando los clientes,
+sucursales y cortes que ya existen para no romper las relaciones de la
+aplicación.
+
+Instala las librerías una sola vez:
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+Ejecuta la carga con la URI configurada en `.env`:
+
+```bash
+python3 scripts/poblar_ventas_5000.py
+```
+
+También puedes indicar la base de datos directamente o revisar un ejemplo sin
+insertar nada:
+
+```bash
+python3 scripts/poblar_ventas_5000.py --db carniceria
+python3 scripts/poblar_ventas_5000.py --dry-run
+```
+
+El script muestra el avance de cada lote, mide el tiempo, verifica que los
+documentos de esa ejecución sean exactamente 5,000 y crea los índices de
+`folio`, `fecha_venta`, región de sucursal, corte, estatus y `updatedAt`.
+No borra ventas anteriores: cada ejecución usa folios únicos con el prefijo
+`PY5000`.
+
+El documento generado conserva el esquema que utiliza la plataforma:
+
+```json
+{
+  "folio": "PY5000-20261125093000-A1B2C3-0001",
+  "fecha_venta": "2026-11-25T15:30:00.000Z",
+  "cliente": {
+    "id": 16,
+    "nombre": "Restaurante Sonora Grill Culiacán",
+    "tipo": "restaurante",
+    "ciudad": "Culiacán",
+    "pais": "México",
+    "ubicacion": {
+      "ciudad": "Culiacán",
+      "pais": "México",
+      "lat": 24.8091,
+      "lng": -107.394,
+      "precision": "ciudad"
+    }
+  },
+  "sucursal": {
+    "id": 1,
+    "nombre": "Sucursal Culiacán Centro",
+    "region_id": 1,
+    "region": "Noroeste"
+  },
+  "items": [
+    {
+      "corte_id": 1,
+      "corte": "Arrachera Marinada",
+      "tipo_carne": "res",
+      "kg": 5.0,
+      "precio_kg": 245.0,
+      "subtotal": 1225.0
+    }
+  ],
+  "pago": {
+    "metodo": "transferencia",
+    "total": 1225.0
+  },
+  "estatus": "completada",
+  "createdAt": "2026-11-25T15:30:00.000Z",
+  "updatedAt": "2026-11-25T15:30:00.000Z"
+}
+```
+
+Los nombres, precios y relaciones se toman de los catálogos reales de la
+aplicación; Faker genera las fechas, cantidades, folios y distribución de
+pagos/estatus para conservar la lógica del negocio. En este proyecto los
+catálogos usan IDs numéricos, por eso no se inventan `ObjectId` que dejarían
+referencias inválidas.
+
 ## Ejecutar la aplicación
 
 ```bash
