@@ -1,4 +1,4 @@
-# 🥩 Sistema de Gestión para Carnicería — MongoDB
+# 🥩 Sistema de Gestión para Carnicería - MongoDB
 
 Sistema web full stack para una carnicería multirregional. Toda la información operativa y de catálogo se guarda en MongoDB; no se necesita MySQL.
 
