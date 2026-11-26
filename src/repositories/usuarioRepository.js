@@ -26,4 +26,32 @@ async function buscarPorUsuario(usuario) {
   return Usuario.findOne({ usuario, activo: true }).select('+password_hash').lean();
 }
 
-module.exports = { asegurarAdministrador, buscarPorUsuario };
+async function obtenerPerfilPorId(id) {
+  return Usuario.findOne({ id, activo: true })
+    .select({ _id: 0, id: 1, nombre: 1, usuario: 1, rol: 1, correo: 1, telefono: 1, foto: 1, createdAt: 1, updatedAt: 1 })
+    .lean();
+}
+
+async function actualizarPerfil(id, datos) {
+  return Usuario.findOneAndUpdate(
+    { id, activo: true },
+    {
+      $set: {
+        nombre: datos.nombre,
+        correo: datos.correo || undefined,
+        telefono: datos.telefono || undefined,
+        foto: datos.foto || undefined
+      }
+    },
+    { new: true, runValidators: true }
+  )
+    .select({ _id: 0, id: 1, nombre: 1, usuario: 1, rol: 1, correo: 1, telefono: 1, foto: 1, createdAt: 1, updatedAt: 1 })
+    .lean();
+}
+
+module.exports = {
+  asegurarAdministrador,
+  buscarPorUsuario,
+  obtenerPerfilPorId,
+  actualizarPerfil
+};

@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body } = require('express-validator');
 const { validarCampos } = require('../middlewares/errorMiddleware');
 const { obtenerJwtSecret, esProduccion } = require('../config/jwt');
+const { verificarToken } = require('../middlewares/authMiddleware');
 const UsuarioRepository = require('../repositories/usuarioRepository');
 
 const router = express.Router();
@@ -66,24 +67,50 @@ router.post(
   }
 );
 
-router.get('/perfil', (req, res) => {
-  const authHeader = req.headers.authorization;
-  const token = req.cookies?.[COOKIE_SESION]
-    || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null);
-  if (!token) {
-    return res.status(401).json({ ok: false, mensaje: 'No autorizado' });
-  }
-
+router.get('/perfil', verificarToken, async (req, res, next) => {
   try {
-    const decodificado = jwt.verify(token, obtenerJwtSecret());
-    res.json({ ok: true, usuario: decodificado });
+    const perfil = await UsuarioRepository.obtenerPerfilPorId(req.usuario.id);
+    if (!perfil) return res.status(404).json({ ok: false, mensaje: 'Perfil no encontrado' });
+    res.json({ ok: true, usuario: perfil });
   } catch (error) {
-    if (error.codigo === 'JWT_SECRET_FALTANTE') {
-      return res.status(503).json({ ok: false, codigo: error.codigo, mensaje: error.message });
-    }
-    res.status(401).json({ ok: false, mensaje: 'Token inválido o expirado' });
+    next(error);
   }
 });
+
+router.put(
+  '/perfil',
+  verificarToken,
+  [
+    body('nombre').trim().notEmpty().isLength({ max: 120 }).withMessage('El nombre es obligatorio y no puede superar 120 caracteres'),
+    body('correo').optional({ checkFalsy: true }).isEmail().withMessage('El correo electrónico no es válido'),
+    body('telefono').optional({ checkFalsy: true }).trim().isLength({ max: 30 }).withMessage('El teléfono no puede superar 30 caracteres'),
+    body('foto').optional({ nullable: true }).custom((valor) => {
+      if (valor === '' || valor === null || valor === undefined) return true;
+      if (typeof valor !== 'string' || valor.length > 450000) {
+        throw new Error('La foto es demasiado grande');
+      }
+      if (!/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(valor)) {
+        throw new Error('La foto debe ser JPG, PNG o WebP');
+      }
+      return true;
+    }),
+    validarCampos
+  ],
+  async (req, res, next) => {
+    try {
+      const perfil = await UsuarioRepository.actualizarPerfil(req.usuario.id, {
+        nombre: req.body.nombre,
+        correo: req.body.correo,
+        telefono: req.body.telefono,
+        foto: req.body.foto
+      });
+      if (!perfil) return res.status(404).json({ ok: false, mensaje: 'Perfil no encontrado' });
+      res.json({ ok: true, mensaje: 'Perfil actualizado correctamente', datos: perfil });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 router.post('/logout', (req, res) => {
   res.clearCookie(COOKIE_SESION, opcionesCookie());

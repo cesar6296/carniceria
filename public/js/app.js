@@ -7,6 +7,7 @@ let intervaloLiveView = null;
 let globoLiveView = null;
 let globoResizeHandler = null;
 let ultimaVentaLiveId = null;
+let fotoPerfilData = '';
 
 function alternarSidebar() {
   const sidebar = document.getElementById('sidebar-menu');
@@ -17,7 +18,7 @@ function alternarSidebar() {
 
 function obtenerVistaDesdeRuta() {
   const ruta = window.location.pathname.replace(/^\//, '');
-  const rutasValidas = ['dashboard', 'ayuda', 'operaciones-mongo', 'clientes-globales', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes'];
+  const rutasValidas = ['dashboard', 'ayuda', 'operaciones-mongo', 'clientes-globales', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes', 'perfil'];
   return rutasValidas.includes(ruta) ? ruta : 'dashboard';
 }
 
@@ -210,6 +211,10 @@ function navegar(vista, actualizarUrl = true) {
     case 'clientes':
       titulo.innerText = 'Gestión de Clientes';
       renderizarClientes(contenedor);
+      break;
+    case 'perfil':
+      titulo.innerText = 'Mi Perfil';
+      renderizarPerfil(contenedor);
       break;
   }
 }
@@ -1277,6 +1282,154 @@ async function renderizarClientes(c) {
     `).join('');
   } catch (e) {
     console.error(e);
+  }
+}
+
+async function renderizarPerfil(c) {
+  c.innerHTML = '<section class="perfil-card"><p class="texto-ayuda">Cargando tu información...</p></section>';
+
+  try {
+    const res = await API.get('/api/auth/perfil');
+    const perfil = res.usuario || {};
+    fotoPerfilData = perfil.foto || '';
+    const fotoInicial = fotoPerfilData ? escaparHtml(fotoPerfilData) : '';
+    const nombre = escaparHtml(perfil.nombre || 'Administrador');
+    const usuario = escaparHtml(perfil.usuario || '');
+    const rol = escaparHtml(perfil.rol || 'admin');
+
+    c.innerHTML = `
+      <div class="perfil-layout">
+        <section class="perfil-card perfil-resumen-card">
+          <div class="perfil-avatar-contenedor">
+            <div id="perfil-avatar-placeholder" class="perfil-avatar-placeholder" ${fotoInicial ? 'hidden' : ''}>👤</div>
+            <img id="perfil-foto-preview" class="perfil-avatar" src="${fotoInicial}" alt="Foto de perfil de ${nombre}" ${fotoInicial ? '' : 'hidden'}>
+          </div>
+          <h3 id="perfil-resumen-nombre">${nombre}</h3>
+          <span class="perfil-rol-badge">${rol}</span>
+          <p>Administra tu información personal desde un solo lugar.</p>
+          <div class="perfil-dato-resumen"><span>Usuario</span><strong>${usuario}</strong></div>
+        </section>
+
+        <section class="perfil-card perfil-form-card">
+          <div class="perfil-card-titulo">
+            <div>
+              <span class="perfil-etiqueta">CUENTA PERSONAL</span>
+              <h3>Mi Perfil</h3>
+            </div>
+            <span class="perfil-icono" aria-hidden="true">⚙️</span>
+          </div>
+          <p class="texto-ayuda">Actualiza tu nombre, datos de contacto y foto. Esta información se guarda en MongoDB.</p>
+          <form id="form-perfil" class="perfil-form">
+            <div class="perfil-campos-grid">
+              <div>
+                <label for="perfil-nombre">Nombre completo</label>
+                <input id="perfil-nombre" class="form-control" type="text" value="${nombre}" maxlength="120" required>
+              </div>
+              <div>
+                <label for="perfil-usuario">Usuario de acceso</label>
+                <input id="perfil-usuario" class="form-control" type="text" value="${usuario}" readonly>
+              </div>
+              <div>
+                <label for="perfil-correo">Correo electrónico</label>
+                <input id="perfil-correo" class="form-control" type="email" value="${escaparHtml(perfil.correo || '')}" placeholder="tu-correo@ejemplo.com">
+              </div>
+              <div>
+                <label for="perfil-telefono">Número de teléfono</label>
+                <input id="perfil-telefono" class="form-control" type="tel" value="${escaparHtml(perfil.telefono || '')}" maxlength="30" placeholder="667-000-0000">
+              </div>
+              <div>
+                <label for="perfil-rol">Rol</label>
+                <input id="perfil-rol" class="form-control" type="text" value="${rol}" readonly>
+              </div>
+            </div>
+            <div class="perfil-foto-campo">
+              <label for="perfil-foto">Foto de perfil</label>
+              <input id="perfil-foto" class="form-control" type="file" accept="image/jpeg,image/png,image/webp" onchange="previsualizarFotoPerfil(this)">
+              <small>Formatos JPG, PNG o WebP. La imagen se ajustará automáticamente para guardarse de forma segura.</small>
+            </div>
+            <div class="perfil-acciones">
+              <button id="perfil-guardar" class="btn btn-primario" type="submit">Guardar información</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    `;
+
+    document.getElementById('form-perfil').addEventListener('submit', guardarPerfil);
+  } catch (e) {
+    c.innerHTML = '<section class="perfil-card"><p class="texto-ayuda">No se pudo cargar tu perfil.</p></section>';
+  }
+}
+
+function previsualizarFotoPerfil(input) {
+  const archivo = input.files && input.files[0];
+  if (!archivo) return;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type)) {
+    API.mostrarToast('Selecciona una imagen JPG, PNG o WebP', 'error');
+    input.value = '';
+    return;
+  }
+  if (archivo.size > 5 * 1024 * 1024) {
+    API.mostrarToast('La foto no puede superar 5 MB', 'error');
+    input.value = '';
+    return;
+  }
+
+  const lector = new FileReader();
+  lector.onload = (evento) => {
+    const imagen = new Image();
+    imagen.onload = () => {
+      const maximo = 480;
+      const escala = Math.min(1, maximo / Math.max(imagen.width, imagen.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(imagen.width * escala));
+      canvas.height = Math.max(1, Math.round(imagen.height * escala));
+      const contexto = canvas.getContext('2d');
+      contexto.drawImage(imagen, 0, 0, canvas.width, canvas.height);
+      fotoPerfilData = canvas.toDataURL('image/jpeg', 0.82);
+
+      const preview = document.getElementById('perfil-foto-preview');
+      const placeholder = document.getElementById('perfil-avatar-placeholder');
+      if (preview) {
+        preview.src = fotoPerfilData;
+        preview.hidden = false;
+      }
+      if (placeholder) placeholder.hidden = true;
+    };
+    imagen.src = evento.target.result;
+  };
+  lector.readAsDataURL(archivo);
+}
+
+async function guardarPerfil(evento) {
+  evento.preventDefault();
+  const boton = document.getElementById('perfil-guardar');
+  const datos = {
+    nombre: document.getElementById('perfil-nombre').value.trim(),
+    correo: document.getElementById('perfil-correo').value.trim(),
+    telefono: document.getElementById('perfil-telefono').value.trim(),
+    foto: fotoPerfilData
+  };
+
+  if (!datos.nombre) {
+    API.mostrarToast('El nombre es obligatorio', 'error');
+    return;
+  }
+
+  boton.disabled = true;
+  boton.innerText = 'Guardando...';
+  try {
+    const res = await API.put('/api/auth/perfil', datos);
+    document.getElementById('usuario-nombre').innerText = res.datos.nombre || datos.nombre;
+    API.mostrarToast(res.mensaje || 'Perfil actualizado correctamente', 'exito');
+    renderizarPerfil(document.getElementById('contenido-vista'));
+  } catch (e) {
+    console.error(e);
+  } finally {
+    if (boton) {
+      boton.disabled = false;
+      boton.innerText = 'Guardar información';
+    }
   }
 }
 
