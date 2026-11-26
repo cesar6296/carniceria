@@ -1313,6 +1313,10 @@ async function renderizarPerfil(c) {
     c.innerHTML = `
       <div class="perfil-layout">
         <section class="perfil-card perfil-resumen-card">
+          <div class="perfil-portada">
+            <span>PERFIL DE CUENTA</span>
+            <span aria-hidden="true">🥩</span>
+          </div>
           <div class="perfil-avatar-contenedor">
             <div id="perfil-avatar-placeholder" class="perfil-avatar-placeholder" ${fotoInicial ? 'hidden' : ''}>👤</div>
             <img id="perfil-foto-preview" class="perfil-avatar" src="${fotoInicial}" alt="Foto de perfil de ${nombre}" ${fotoInicial ? '' : 'hidden'}>

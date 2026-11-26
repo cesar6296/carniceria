@@ -170,15 +170,37 @@ header.topbar {
 }
 
 .perfil-resumen-card {
+  overflow: hidden;
+  padding: 0 24px 24px;
   text-align: center;
   background: linear-gradient(145deg, #fff, #fff8f5);
+}
+
+.perfil-portada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 92px;
+  margin: 0 -24px;
+  padding: 22px 24px 38px;
+  background: linear-gradient(135deg, #690000 0%, #A50E16 62%, #D99A51 140%);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.perfil-portada span:last-child {
+  font-size: 1.7rem;
+  line-height: 1;
 }
 
 .perfil-avatar-contenedor {
   width: 132px;
   height: 132px;
-  margin: 0 auto 17px;
+  margin: -67px auto 17px;
   position: relative;
+  z-index: 1;
 }
 
 .perfil-avatar,
@@ -202,6 +224,11 @@ header.topbar {
   justify-content: center;
   background: linear-gradient(145deg, #8B0000, #C53030);
   font-size: 3.2rem;
+}
+
+.perfil-avatar[hidden],
+.perfil-avatar-placeholder[hidden] {
+  display: none !important;
 }
 
 .perfil-resumen-card h3 {
