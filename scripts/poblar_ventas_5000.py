@@ -27,6 +27,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import certifi
 from bson import ObjectId
 from dotenv import load_dotenv
 from faker import Faker
@@ -106,7 +107,7 @@ def obtener_base(client: MongoClient, nombre_indicado: str | None):
         base_por_uri = client.get_default_database()
     except ConfigurationError:
         base_por_uri = None
-    return base_por_uri or client["carniceria"]
+    return base_por_uri if base_por_uri is not None else client["carniceria"]
 
 
 def cargar_catalogos(db) -> dict[str, list[dict[str, Any]]]:
@@ -328,7 +329,11 @@ def main() -> None:
     if args.semilla is not None:
         fake.seed_instance(args.semilla)
 
-    client = MongoClient(args.uri, serverSelectionTimeoutMS=5_000)
+    client = MongoClient(
+        args.uri,
+        tlsCAFile=certifi.where(),
+        serverSelectionTimeoutMS=5_000,
+    )
     inicio_total = time.perf_counter()
     try:
         client.admin.command("ping")

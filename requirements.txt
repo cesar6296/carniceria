@@ -1,3 +1,4 @@
 pymongo>=4.10,<5
 Faker>=37.0,<38
 python-dotenv>=1.0,<2
+certifi>=2024.2.2
