@@ -19,6 +19,7 @@ function alternarSidebar() {
 function obtenerVistaDesdeRuta() {
   const ruta = window.location.pathname.replace(/^\//, '');
   const rutasValidas = ['dashboard', 'ayuda', 'operaciones-mongo', 'clientes-globales', 'nueva-venta', 'historial-ventas', 'inventario', 'mermas', 'historial-regional', 'cortes', 'clientes', 'perfil'];
+  if (ruta === 'login') return 'login';
   return rutasValidas.includes(ruta) ? ruta : 'dashboard';
 }
 
@@ -30,6 +31,10 @@ function irA(e, vista) {
 
 window.addEventListener('popstate', (e) => {
   const vista = (e.state && e.state.vista) ? e.state.vista : obtenerVistaDesdeRuta();
+  if (vista === 'login') {
+    mostrarLogin();
+    return;
+  }
   navegar(vista, false);
 });
 
@@ -59,6 +64,9 @@ function mostrarLogin(mensaje = '') {
   document.getElementById('app-privada').style.display = 'none';
   document.getElementById('vista-login').style.display = 'flex';
   document.getElementById('login-error').innerText = mensaje;
+  if (window.location.pathname !== '/login') {
+    window.history.replaceState({ vista: 'login' }, '', '/login');
+  }
 }
 
 function mostrarAplicacion(usuario) {
@@ -67,7 +75,12 @@ function mostrarAplicacion(usuario) {
   document.getElementById('usuario-nombre').innerText = usuario.nombre || usuario.usuario;
   verificarSalud();
   if (!intervaloSalud) intervaloSalud = setInterval(verificarSalud, 10000);
-  navegar(obtenerVistaDesdeRuta(), false);
+  const vistaSolicitada = obtenerVistaDesdeRuta();
+  const vistaInicial = vistaSolicitada === 'login' ? 'dashboard' : vistaSolicitada;
+  navegar(vistaInicial, false);
+  if (window.location.pathname !== `/${vistaInicial}`) {
+    window.history.replaceState({ vista: vistaInicial }, '', `/${vistaInicial}`);
+  }
 }
 
 async function procesarLogin(evento) {
